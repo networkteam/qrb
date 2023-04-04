@@ -135,35 +135,13 @@ func Interval(s string) builder.Exp {
 	return builder.Interval(s)
 }
 
-/*
-
-func Like(lft builder.Exp, rgt builder.Exp) builder.MatchingBuilder {
-	return builder.Like(lft, rgt)
-}
-
-func ILike(lft builder.Exp, rgt builder.Exp) builder.MatchingBuilder {
-	return builder.ILike(lft, rgt)
-}
-
-func NotLike(lft builder.Exp, rgt builder.Exp) builder.MatchingBuilder {
-	return builder.NotLike(lft, rgt)
-}
-
-func NotILike(lft builder.Exp, rgt builder.Exp) builder.MatchingBuilder {
-	return builder.NotILike(lft, rgt)
-}
-
-func SimilarTo(lft builder.Exp, rgt builder.Exp) builder.MatchingBuilder {
-	return builder.SimilarTo(lft, rgt)
-}
-
-func NotSimilarTo(lft builder.Exp, rgt builder.Exp) builder.MatchingBuilder {
-	return builder.NotSimilarTo(lft, rgt)
-}
-
-*/
-
 // Exps returns a slice of expressions, just for syntactic sugar.
 func Exps(exps ...builder.Exp) []builder.Exp {
 	return exps
+}
+
+// ---
+
+func InsertInto(tableName string) builder.InsertBuilder {
+	return builder.InsertInto(tableName)
 }
