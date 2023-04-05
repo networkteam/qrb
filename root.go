@@ -153,3 +153,7 @@ func InsertInto(tableName string) builder.InsertBuilder {
 func Update(tableName string) builder.UpdateBuilder {
 	return builder.Update(tableName)
 }
+
+func DeleteFrom(tableName string) builder.DeleteBuilder {
+	return builder.DeleteFrom(tableName)
+}
