@@ -2,18 +2,18 @@
 
 * Insert, update, delete statements:
     * [x] Add `Insert` statement
-      * [ ] Support `WITH` queries
+      * [x] Support `WITH` queries
       * [ ] Support `OVERRIDING { SYSTEM | USER } VALUE` clause
-      * [ ] Support `DEFAULT VALUES`
-      * [ ] Support `.Query` to add a `SELECT` statement
+      * [x] Support `DEFAULT VALUES`
+      * [x] Support `.Query` to add a `SELECT` statement
       * [ ] Support `ON CONFLICT` clause
-      * [ ] Support `RETURNING` clause
+      * [x] Support `RETURNING` clause
     * [x] Add `Update` statement
       * [ ] Support `WITH` queries
       * [ ] Suppport `SetColumnList` to set column names from expressions or a sub-select
       * [ ] Support `FROM` clause for joins
       * [ ] Support `WHERE CURRENT OF cursor_name` clause
-      * [ ] Support `RETURNING` clause
+      * [x] Support `RETURNING` clause
     * [x] Add `Delete` statement
       * [ ] Support `WITH` queries
       * [ ] Support `ONLY` and `table_name *`

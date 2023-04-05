@@ -5,7 +5,7 @@ import (
 )
 
 type SelectBuilder struct {
-	withQueries []withQuery
+	withQueries withQueries
 	// combinations holds possible previous selects and combination via UNION, INTERSECT or EXCEPT with the current select.
 	combinations []selectCombination
 	// parts holds the parts of the current select.
@@ -15,6 +15,14 @@ type SelectBuilder struct {
 func (b SelectBuilder) IsExp()            {}
 func (b SelectBuilder) isFromExp()        {}
 func (b SelectBuilder) isFromLateralExp() {}
+func (b SelectBuilder) isSelect()         {}
+func (b SelectBuilder) isWithQuery()      {}
+
+type SelectExp interface {
+	Exp
+	innerSQLWriter
+	isSelect()
+}
 
 type selectQueryParts struct {
 	distinct          bool
@@ -46,166 +54,16 @@ type selectCombination struct {
 	all             bool
 }
 
-// [ WITH [ RECURSIVE ] with_query [, ...] ]
-// with_query: with_query_name [ ( column_name [, ...] ) ] AS [ [ NOT ] MATERIALIZED ] ( select | values | insert | update | delete )
-//             [ SEARCH { BREADTH | DEPTH } FIRST BY column_name [, ...] SET search_seq_col_name ]
-// TODO:       [ CYCLE column_name [, ...] SET cycle_mark_col_name [ TO cycle_mark_value DEFAULT cycle_mark_default ] USING cycle_path_col_name ]
-
-type WithQuery interface {
-	SQLWriter
-	isWithQuery()
-}
-
-// isWithQuery is a marker method to ensure that multiple builder types can be used as WITH queries.
-func (b SelectBuilder) isWithQuery() {}
-
-var _ WithQuery = SelectBuilder{}
-
-// With adds a WITH query to the select builder.
-// The actual query must be supplied via WithBuilder.As.
-func (b SelectBuilder) With(queryName string) WithBuilder {
+// AppendWith adds the given with queries to the select builder.
+func (b SelectBuilder) AppendWith(w WithBuilder) SelectBuilder {
 	newBuilder := b
-	newBuilder.withQueries = make([]withQuery, len(b.withQueries), len(b.withQueries)+1)
+
+	newBuilder.withQueries = make(withQueries, len(b.withQueries), len(b.withQueries)+len(w.withQueries))
 	copy(newBuilder.withQueries, b.withQueries)
 
-	newBuilder.withQueries = append(newBuilder.withQueries, withQuery{
-		queryName: queryName,
-	})
-
-	return WithBuilder{
-		builder: newBuilder,
-	}
-}
-
-// WithRecursive adds a WITH RECURSIVE query to the select builder.
-// The actual query must be supplied via WithBuilder.As.
-func (b SelectBuilder) WithRecursive(queryName string) WithBuilder {
-	newBuilder := b
-	newBuilder.withQueries = make([]withQuery, len(b.withQueries), len(b.withQueries)+1)
-	copy(newBuilder.withQueries, b.withQueries)
-
-	newBuilder.withQueries = append(newBuilder.withQueries, withQuery{
-		recursive: true,
-		queryName: queryName,
-	})
-
-	return WithBuilder{
-		builder: newBuilder,
-	}
-}
-
-// ColumnNames sets the column names for the current WITH query.
-func (b WithBuilder) ColumnNames(names ...string) WithBuilder {
-	newBuilder := b
-	newBuilder.builder.withQueries = make([]withQuery, len(newBuilder.builder.withQueries), len(newBuilder.builder.withQueries)+1)
-	copy(newBuilder.builder.withQueries, b.builder.withQueries)
-
-	lastIdx := len(newBuilder.builder.withQueries) - 1
-	newBuilder.builder.withQueries[lastIdx].columnNames = names
+	newBuilder.withQueries = append(newBuilder.withQueries, w.withQueries...)
 
 	return newBuilder
-}
-
-func (b WithBuilder) As(builder WithQuery) WithSelectBuilder {
-	return b.asWithMaterialized(builder, nil)
-}
-
-func (b WithBuilder) AsNotMaterialized(builder WithQuery) WithSelectBuilder {
-	materialized := false
-	return b.asWithMaterialized(builder, &materialized)
-}
-
-func (b WithBuilder) AsMaterialized(builder WithQuery) WithSelectBuilder {
-	materialized := true
-	return b.asWithMaterialized(builder, &materialized)
-}
-
-func (b WithBuilder) asWithMaterialized(builder WithQuery, materialized *bool) WithSelectBuilder {
-	newBuilder := WithSelectBuilder{b.builder}
-	newBuilder.withQueries = make([]withQuery, len(newBuilder.withQueries), len(newBuilder.withQueries)+1)
-	copy(newBuilder.withQueries, b.builder.withQueries)
-
-	lastIdx := len(newBuilder.withQueries) - 1
-	newBuilder.withQueries[lastIdx].builder = builder
-	newBuilder.withQueries[lastIdx].materialized = materialized
-
-	return newBuilder
-}
-
-const withSearchTypeDepth = "DEPTH"
-const withSearchTypeBreadth = "BREADTH"
-
-func (b WithSelectBuilder) SearchDepthFirst() WithSearchBuilder {
-	return WithSearchBuilder{
-		builder:    b.SelectBuilder,
-		searchType: withSearchTypeDepth,
-	}
-}
-
-func (b WithSelectBuilder) SearchBreadthFirst() WithSearchBuilder {
-	return WithSearchBuilder{
-		builder:    b.SelectBuilder,
-		searchType: withSearchTypeBreadth,
-	}
-}
-
-func (b WithSearchBuilder) By(columnName Exp, columnNames ...Exp) WithSearchByBuilder {
-	return WithSearchByBuilder{
-		builder:       b.builder,
-		searchType:    b.searchType,
-		byColumnNames: append([]Exp{columnName}, columnNames...),
-	}
-}
-
-func (b WithSearchByBuilder) Set(searchColumnName string) WithSelectBuilder {
-	newBuilder := WithSelectBuilder{b.builder}
-	newBuilder.withQueries = make([]withQuery, len(newBuilder.withQueries), len(newBuilder.withQueries)+1)
-	copy(newBuilder.withQueries, b.builder.withQueries)
-
-	lastIdx := len(newBuilder.withQueries) - 1
-	newBuilder.withQueries[lastIdx].search = &withQuerySearch{
-		searchType:    b.searchType,
-		byColumnNames: b.byColumnNames,
-		setColumnName: searchColumnName,
-	}
-
-	return newBuilder
-}
-
-// WithBuilder starts building a WITH query.
-type WithBuilder struct {
-	builder SelectBuilder
-}
-
-// WithSelectBuilder is a SelectBuilder and can refer to the latest WITH query.
-type WithSelectBuilder struct {
-	SelectBuilder
-}
-
-type WithSearchBuilder struct {
-	builder    SelectBuilder
-	searchType string
-}
-
-type WithSearchByBuilder struct {
-	builder       SelectBuilder
-	searchType    string
-	byColumnNames []Exp
-}
-
-type withQuery struct {
-	recursive    bool
-	queryName    string
-	columnNames  []string
-	materialized *bool
-	builder      WithQuery
-	search       *withQuerySearch
-}
-
-type withQuerySearch struct {
-	searchType    string
-	byColumnNames []Exp
-	setColumnName string
 }
 
 // SELECT [ ALL | DISTINCT [ ON ( expression [, ...] ) ] ]
@@ -272,11 +130,8 @@ func (b SelectBuilder) Select(exps ...Exp) SelectSelectBuilder {
 	}
 }
 
-// SelectJson sets the JSON selection for this builder.
-//
-// Any additional selections are added after the JSON selection.
-// The JSON selection can be modified by SelectBuilder.SelectJson.
-func (b SelectBuilder) SelectJson(apply func(obj JsonBuildObjectBuilder) JsonBuildObjectBuilder) SelectJsonSelectBuilder {
+// ApplySelectJson applies the given function to the current JSON selection (empty JsonBuildObjectBuilder if none set).
+func (b SelectBuilder) ApplySelectJson(apply func(obj JsonBuildObjectBuilder) JsonBuildObjectBuilder) SelectJsonSelectBuilder {
 	newBuilder := b
 
 	var obj JsonBuildObjectBuilder
@@ -372,7 +227,7 @@ type fromItem struct {
 	columnAliases  []string
 }
 
-var ErrFromItemLateralAndOnly = errors.New("cannot specify both LATERAL and ONLY")
+var ErrFromItemLateralAndOnly = errors.New("from item: cannot specify both LATERAL and ONLY")
 
 func (i fromItem) WriteSQL(sb *SQLBuilder) {
 	if i.lateral && i.only {
@@ -914,18 +769,7 @@ func (b SelectBuilder) WriteSQL(sb *SQLBuilder) {
 // innerWriteSQL writes the select without the surrounding parentheses.
 func (b SelectBuilder) innerWriteSQL(sb *SQLBuilder) {
 	if len(b.withQueries) > 0 {
-		sb.WriteString("WITH ")
-		if b.hasRecursiveWith() {
-			// from the docs: When there are multiple queries in the WITH clause, RECURSIVE should be written only once, immediately after WITH. It applies to all queries in the WITH clause, though it has no effect on queries that do not use recursion or forward references.
-			sb.WriteString("RECURSIVE ")
-		}
-		for i, w := range b.withQueries {
-			if i > 0 {
-				sb.WriteString(",")
-			}
-			w.writeSQL(sb)
-		}
-		sb.WriteRune(' ')
+		b.withQueries.WriteSQL(sb)
 	}
 
 	// Write any previous select with combination via UNION, INTERSECT or EXCEPT
@@ -960,41 +804,6 @@ func (b SelectBuilder) innerWriteSQL(sb *SQLBuilder) {
 	if b.parts.offset != nil {
 		sb.WriteString(" OFFSET ")
 		b.parts.offset.WriteSQL(sb)
-	}
-}
-
-func (w withQuery) writeSQL(sb *SQLBuilder) {
-	sb.WriteString(w.queryName)
-	if len(w.columnNames) > 0 {
-		sb.WriteRune('(')
-		for i, c := range w.columnNames {
-			if i > 0 {
-				sb.WriteRune(',')
-			}
-			sb.WriteString(c)
-		}
-		sb.WriteRune(')')
-	}
-	sb.WriteString(" AS ")
-	if w.materialized != nil {
-		if *w.materialized == false {
-			sb.WriteString("NOT ")
-		}
-		sb.WriteString("MATERIALIZED ")
-	}
-	w.builder.WriteSQL(sb)
-	if w.search != nil {
-		sb.WriteString(" SEARCH ")
-		sb.WriteString(w.search.searchType)
-		sb.WriteString(" FIRST BY ")
-		for i, exp := range w.search.byColumnNames {
-			if i > 0 {
-				sb.WriteRune(',')
-			}
-			exp.WriteSQL(sb)
-		}
-		sb.WriteString(" SET ")
-		sb.WriteString(w.search.setColumnName)
 	}
 }
 
@@ -1070,19 +879,10 @@ func writeSelectParts(sb *SQLBuilder, parts selectQueryParts) {
 
 // ApplyIf applies the given function to the builder if the condition is true.
 // It returns the builder itself if the condition is false, otherwise it returns the result of the function.
-// It' especially helpful for building a query conditionally.
-func (b SelectBuilder) ApplyIf(cond bool, f func(q SelectBuilder) SelectBuilder) SelectBuilder {
-	if cond && f != nil {
-		return f(b)
+// It's especially helpful for building a query conditionally.
+func (b SelectBuilder) ApplyIf(cond bool, apply func(q SelectBuilder) SelectBuilder) SelectBuilder {
+	if cond && apply != nil {
+		return apply(b)
 	}
 	return b
-}
-
-func (b SelectBuilder) hasRecursiveWith() bool {
-	for _, w := range b.withQueries {
-		if w.recursive {
-			return true
-		}
-	}
-	return false
 }

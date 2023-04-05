@@ -112,14 +112,14 @@ func TestSelectBuilder(t *testing.T) {
 
 		if opts.IncludeAuthor {
 			// See below for a nicer way to do this via subselects
-			q = q.SelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
+			q = q.ApplySelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
 				return obj.Prop("Author", authorJSON.
 					PropIf(opts.AuthorOpts.IncludeBooks, "Books", qrb.N("author_books.books")),
 				)
 			}).SelectBuilder
 
 			if opts.AuthorOpts.IncludeBooks {
-				q = q.With("author_books").As(
+				q = q.AppendWith(qrb.With("author_books").As(
 					qrb.Select(qrb.N("author_id")).
 						Select(
 							qrb.Coalesce(
@@ -129,13 +129,13 @@ func TestSelectBuilder(t *testing.T) {
 						).As("books").
 						From(qrb.N("books")).
 						GroupBy(qrb.N("author_id")),
-				).
+				)).
 					LeftJoin(qrb.N("author_books")).Using("author_id")
 			}
 		}
 
 		if opts.IncludeGenres {
-			q = q.With("book_genres").As(
+			q = q.AppendWith(qrb.With("book_genres").As(
 				qrb.Select(qrb.N("book_id")).
 					Select(
 						qrb.Coalesce(
@@ -146,8 +146,8 @@ func TestSelectBuilder(t *testing.T) {
 					From(qrb.N("book_genre")).
 					Join(qrb.N("genres")).Using("genre_id").
 					GroupBy(qrb.N("book_id")),
-			).
-				SelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
+			)).
+				ApplySelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
 					return obj.Prop("Genres", qrb.N("book_genres.genres"))
 				}).
 				LeftJoin(qrb.N("book_genres")).Using("book_id")
@@ -338,7 +338,7 @@ func TestSelectBuilder(t *testing.T) {
 
 		t.Run("with modified JSON selection", func(t *testing.T) {
 			q := selectBook(bookQueryOpts{}).
-				SelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
+				ApplySelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
 					return obj.
 						Unset("CreatedAt").
 						Unset("UpdatedAt")
@@ -907,7 +907,7 @@ func TestSelectBuilder_OrderBy(t *testing.T) {
 func TestSelectBuilder_With(t *testing.T) {
 	t.Run("immutability", func(t *testing.T) {
 		q1 := qrb.With("foo").As(qrb.Select(qrb.Int(1))).Select(qrb.N("foo"))
-		q2 := q1.With("bar").As(qrb.Select(qrb.Int(2)))
+		q2 := q1.AppendWith(qrb.With("bar").As(qrb.Select(qrb.Int(2))))
 
 		testhelper.AssertSQLWriterEquals(t, "WITH foo AS (SELECT 1) SELECT foo", nil, q1)
 

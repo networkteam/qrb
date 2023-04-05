@@ -69,7 +69,7 @@ func (f FuncBuilder) ColumnDefinition(name, typ string) FuncBuilder {
 	return newBuilder
 }
 
-var errWithOrdinalityAndColumnDefinitions = errors.New("WITH ORDINALITY is not supported with column definitions, use ROWS FROM instead")
+var errWithOrdinalityAndColumnDefinitions = errors.New("func: WITH ORDINALITY is not supported with column definitions, use ROWS FROM instead")
 
 func (f FuncBuilder) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(f.name)

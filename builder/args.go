@@ -19,6 +19,16 @@ func (a argExp) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(p)
 }
 
+// Args creates argument expressions for the given arguments.
+func Args(argument any, rest ...any) []Exp {
+	exps := make([]Exp, 1+len(rest))
+	exps[0] = Arg(argument)
+	for i, arg := range rest {
+		exps[i+1] = Arg(arg)
+	}
+	return exps
+}
+
 // Bind creates an expression that represents an argument that will be bound to a placeholder with the given value.
 // If Bind is called again with the same name, the same placeholder will be used.
 func Bind(argName string) Exp {

@@ -28,7 +28,7 @@ func TestJsonQuery(t *testing.T) {
 
 		// We can now modify an existing JSON selection!
 		// Each SelectBuilder acts as a kind of query blueprint that can be used to modify later.
-		withPostCount := b.SelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
+		withPostCount := b.ApplySelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
 			return obj.Prop("postCount", fn.Count(qrb.N("posts")))
 		})
 

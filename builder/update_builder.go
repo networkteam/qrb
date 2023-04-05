@@ -23,7 +23,10 @@ type UpdateBuilder struct {
 	alias            string
 	setItems         []updateSetItem
 	whereConjunction []Exp
+	returningItems   returningItems
 }
+
+func (b UpdateBuilder) isWithQuery() {}
 
 type updateSetItem struct {
 	columnName string
@@ -86,7 +89,44 @@ func (b UpdateBuilder) Where(cond Exp) UpdateBuilder {
 	return newBuilder
 }
 
+func (b UpdateBuilder) Returning(outputExpression Exp) ReturningUpdateBuilder {
+	newBuilder := b
+
+	newBuilder.returningItems = make(returningItems, len(b.returningItems), len(b.returningItems)+1)
+	copy(newBuilder.returningItems, b.returningItems)
+
+	newBuilder.returningItems = append(newBuilder.returningItems, returningItem{
+		outputExpression: outputExpression,
+	})
+
+	return ReturningUpdateBuilder{newBuilder}
+}
+
+type ReturningUpdateBuilder struct {
+	UpdateBuilder
+}
+
+// As sets the output name for the last output expression.
+func (b ReturningUpdateBuilder) As(outputName string) UpdateBuilder {
+	newBuilder := b.UpdateBuilder
+
+	newBuilder.returningItems = make(returningItems, len(b.returningItems), len(b.returningItems)+1)
+	copy(newBuilder.returningItems, b.returningItems)
+
+	lastIdx := len(newBuilder.returningItems) - 1
+	newBuilder.returningItems[lastIdx].outputName = outputName
+
+	return newBuilder
+}
+
+// WriteSQL writes the update as an expression.
 func (b UpdateBuilder) WriteSQL(sb *SQLBuilder) {
+	sb.WriteRune('(')
+	b.innerWriteSQL(sb)
+	sb.WriteRune(')')
+}
+
+func (b UpdateBuilder) innerWriteSQL(sb *SQLBuilder) {
 	sb.WriteString("UPDATE ")
 	sb.WriteString(b.tableName)
 	if b.alias != "" {
@@ -105,5 +145,8 @@ func (b UpdateBuilder) WriteSQL(sb *SQLBuilder) {
 	if len(b.whereConjunction) > 0 {
 		sb.WriteString(" WHERE ")
 		And(b.whereConjunction...).WriteSQL(sb)
+	}
+	if len(b.returningItems) > 0 {
+		b.returningItems.WriteSQL(sb)
 	}
 }

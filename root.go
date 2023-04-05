@@ -17,15 +17,13 @@ func Build(w builder.SQLWriter) *builder.QueryBuilder {
 
 // With starts a new builder with the given WITH query.
 // Call WithBuilder.As to define the query.
-func With(queryName string) builder.WithBuilder {
-	var b builder.SelectBuilder
-	return b.With(queryName)
+func With(queryName string) builder.WithWithBuilder {
+	return builder.With(queryName)
 }
 
 // WithRecursive starts a new builder with the given WITH RECURSIVE query.
-func WithRecursive(queryName string) builder.WithBuilder {
-	var b builder.SelectBuilder
-	return b.WithRecursive(queryName)
+func WithRecursive(queryName string) builder.WithWithBuilder {
+	return builder.WithRecursive(queryName)
 }
 
 // Select the given output expressions for the select list and start a new SelectBuilder.
@@ -37,10 +35,10 @@ func Select(exps ...builder.Exp) builder.SelectSelectBuilder {
 // SelectJson sets the JSON selection for this select builder.
 //
 // It will always be the first element in the select list.
-// It can be modified later by SelectBuilder.SelectJson.
+// It can be modified later by SelectBuilder.ApplySelectJson.
 func SelectJson(obj builder.JsonBuildObjectBuilder) builder.SelectJsonSelectBuilder {
 	var selectBuilder builder.SelectBuilder
-	return selectBuilder.SelectJson(func(builder builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder { return obj })
+	return selectBuilder.ApplySelectJson(func(builder builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder { return obj })
 }
 
 // Agg builds an aggregate function expression.
@@ -91,6 +89,11 @@ func Least(exp builder.Exp, rest ...builder.Exp) builder.FuncExp {
 // Each call to Arg will create a new placeholder and emit the argument when writing the query.
 func Arg(argument any) builder.Exp {
 	return builder.Arg(argument)
+}
+
+// Args creates argument expressions for the given arguments.
+func Args(argument any, rest ...any) []builder.Exp {
+	return builder.Args(argument, rest...)
 }
 
 // Bind creates an expression that represents an argument that will be bound to a placeholder with the given value.

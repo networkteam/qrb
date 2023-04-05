@@ -25,7 +25,7 @@ type IdentExp struct {
 func (i IdentExp) IsExp()     {}
 func (i IdentExp) isFromExp() {}
 
-var ErrInvalidIdentifier = errors.New("invalid identifier")
+var ErrInvalidIdentifier = errors.New("identifier: invalid")
 
 func (i IdentExp) WriteSQL(sb *SQLBuilder) {
 	if sb.Validating() {

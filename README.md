@@ -17,7 +17,7 @@ A PostgreSQL query builder in Go.
 
 * All builder data structures are immutable by design
 * Implement the full PostgreSQL feature set, including lesser used features
-* Use explicit types instead of `any` where possible
+* Use explicit types instead of `any` where possible and do not use reflection
 * First-hand support for JSON selection (i.e. use `json_build_object` and `json_agg` to select hierarchical data via JSON)
 * Write SQL as Go code following the natural order of the query parts
 * Guide the developer by providing builder types with methods appropriate for the current context 

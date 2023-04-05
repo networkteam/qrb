@@ -49,6 +49,32 @@ func TestUpdateBuilder(t *testing.T) {
 				q,
 			)
 		})
+
+		t.Run("example 2", func(t *testing.T) {
+			q := qrb.
+				Update("weather").
+				Set("temp_lo", qrb.N("temp_lo").Op(builder.OpAdd, qrb.Int(1))).
+				Set("temp_hi", qrb.N("temp_lo").Op(builder.OpAdd, qrb.Int(15))).
+				Set("prcp", qrb.Default()).
+				Where(qrb.And(
+					qrb.N("city").Eq(qrb.String("San Francisco")),
+					qrb.N("date").Eq(qrb.String("2003-07-03")),
+				)).
+				Returning(qrb.N("temp_lo")).
+				Returning(qrb.N("temp_hi")).
+				Returning(qrb.N("prcp"))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				`
+				UPDATE weather SET temp_lo = temp_lo + 1, temp_hi = temp_lo + 15, prcp = DEFAULT
+				  WHERE city = 'San Francisco' AND date = '2003-07-03'
+				  RETURNING temp_lo, temp_hi, prcp
+				`,
+				nil,
+				q,
+			)
+		})
 	})
 
 	t.Run("set map", func(t *testing.T) {

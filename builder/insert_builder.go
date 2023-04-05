@@ -1,6 +1,9 @@
 package builder
 
-import "sort"
+import (
+	"errors"
+	"sort"
+)
 
 // [ WITH [ RECURSIVE ] with_query [, ...] ]
 // INSERT INTO table_name [ AS alias ] [ ( column_name [, ...] ) ]
@@ -16,10 +19,14 @@ func InsertInto(tableName string) InsertBuilder {
 }
 
 type InsertBuilder struct {
-	tableName   string
-	alias       string
-	columnNames []string
-	valueLists  [][]Exp
+	withQueries    withQueries
+	tableName      string
+	alias          string
+	columnNames    []string
+	defaultValues  bool
+	valueLists     [][]Exp
+	query          SelectExp
+	returningItems returningItems
 }
 
 func (b InsertBuilder) As(alias string) InsertBuilder {
@@ -31,6 +38,14 @@ func (b InsertBuilder) As(alias string) InsertBuilder {
 func (b InsertBuilder) ColumnNames(columnName string, rest ...string) InsertBuilder {
 	newBuilder := b
 	newBuilder.columnNames = append([]string{columnName}, rest...)
+	return newBuilder
+}
+
+// DefaultValues sets the DEFAULT VALUES clause to insert a row with default values.
+// If InsertBuilder.Values is called after this method, it will overrule the DEFAULT VALUES clause.
+func (b InsertBuilder) DefaultValues() InsertBuilder {
+	newBuilder := b
+	newBuilder.defaultValues = true
 	return newBuilder
 }
 
@@ -69,7 +84,78 @@ func (b InsertBuilder) SetMap(m map[string]any) InsertBuilder {
 	return newBuilder
 }
 
+// Query sets a select query as the values to insert.
+func (b InsertBuilder) Query(query SelectExp) InsertBuilder {
+	newBuilder := b
+	newBuilder.query = query
+	return newBuilder
+}
+
+func (b InsertBuilder) Returning(outputExpression Exp) ReturningInsertBuilder {
+	newBuilder := b
+
+	newBuilder.returningItems = make(returningItems, len(b.returningItems), len(b.returningItems)+1)
+	copy(newBuilder.returningItems, b.returningItems)
+
+	newBuilder.returningItems = append(newBuilder.returningItems, returningItem{
+		outputExpression: outputExpression,
+	})
+
+	return ReturningInsertBuilder{newBuilder}
+}
+
+type ReturningInsertBuilder struct {
+	InsertBuilder
+}
+
+// As sets the output name for the last output expression.
+func (b ReturningInsertBuilder) As(outputName string) InsertBuilder {
+	newBuilder := b.InsertBuilder
+
+	newBuilder.returningItems = make(returningItems, len(b.returningItems), len(b.returningItems)+1)
+	copy(newBuilder.returningItems, b.returningItems)
+
+	lastIdx := len(newBuilder.returningItems) - 1
+	newBuilder.returningItems[lastIdx].outputName = outputName
+
+	return newBuilder
+}
+
+type returningItem struct {
+	outputExpression Exp
+	outputName       string
+}
+
+type returningItems []returningItem
+
+func (i returningItems) WriteSQL(sb *SQLBuilder) {
+	sb.WriteString(" RETURNING ")
+	for j, item := range i {
+		if j > 0 {
+			sb.WriteString(",")
+		}
+		item.outputExpression.WriteSQL(sb)
+		if item.outputName != "" {
+			sb.WriteString(" AS ")
+			sb.WriteString(item.outputName)
+		}
+	}
+}
+
+var ErrInsertValuesAndQuery = errors.New("insert: cannot set both values and query")
+
+// WriteSQL writes the insert as an expression.
 func (b InsertBuilder) WriteSQL(sb *SQLBuilder) {
+	sb.WriteRune('(')
+	b.innerWriteSQL(sb)
+	sb.WriteRune(')')
+}
+
+func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
+	if len(b.withQueries) > 0 {
+		b.withQueries.WriteSQL(sb)
+	}
+
 	sb.WriteString("INSERT INTO ")
 	sb.WriteString(b.tableName)
 	if b.alias != "" {
@@ -86,7 +172,14 @@ func (b InsertBuilder) WriteSQL(sb *SQLBuilder) {
 		}
 		sb.WriteString(")")
 	}
-	if b.valueLists != nil {
+	if b.valueLists != nil && b.query != nil {
+		sb.AddError(ErrInsertValuesAndQuery)
+		return
+	}
+	if b.query != nil {
+		sb.WriteString(" ")
+		b.query.innerWriteSQL(sb)
+	} else if b.valueLists != nil {
 		sb.WriteString(" VALUES ")
 		for i, valueList := range b.valueLists {
 			if i > 0 {
@@ -101,6 +194,10 @@ func (b InsertBuilder) WriteSQL(sb *SQLBuilder) {
 			}
 			sb.WriteString(")")
 		}
+	} else if b.defaultValues {
+		sb.WriteString(" DEFAULT VALUES")
 	}
-
+	if len(b.returningItems) > 0 {
+		b.returningItems.WriteSQL(sb)
+	}
 }

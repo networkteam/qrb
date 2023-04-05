@@ -79,7 +79,7 @@ type caseCondition struct {
 	result    Exp
 }
 
-var ErrNoConditionsGiven = errors.New("no conditions given")
+var ErrNoConditionsGiven = errors.New("case: no conditions given")
 
 func (c CaseExp) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("CASE")

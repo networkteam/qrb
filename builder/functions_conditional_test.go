@@ -63,6 +63,6 @@ func TestCase(t *testing.T) {
 		b := qrb.Case().End()
 
 		_, _, err := qrb.Build(b).ToSQL()
-		assert.EqualError(t, err, "no conditions given")
+		assert.EqualError(t, err, "case: no conditions given")
 	})
 }
