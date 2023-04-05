@@ -72,7 +72,7 @@ func (e expArray) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("]")
 }
 
-// Null builds the null literal.
+// Null builds the NULL literal.
 func Null() Exp {
 	return expNull{}
 }
@@ -83,6 +83,19 @@ func (e expNull) IsExp() {}
 
 func (e expNull) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("NULL")
+}
+
+// Default builds the DEFAULT keyword.
+func Default() Exp {
+	return expDefault{}
+}
+
+type expDefault struct{}
+
+func (e expDefault) IsExp() {}
+
+func (e expDefault) WriteSQL(sb *SQLBuilder) {
+	sb.WriteString("DEFAULT")
 }
 
 // Interval builds an interval constant.

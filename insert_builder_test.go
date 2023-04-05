@@ -27,7 +27,7 @@ func TestInsertBuilder(t *testing.T) {
 			)
 		})
 
-		t.Run("examples", func(t *testing.T) {
+		t.Run("example 2", func(t *testing.T) {
 			q := qrb.
 				InsertInto("films").
 				ColumnNames("code", "title", "did", "date_prod", "kind").
@@ -60,9 +60,9 @@ func TestInsertBuilder(t *testing.T) {
 		testhelper.AssertSQLWriterEquals(
 			t,
 			`
-				INSERT INTO films (code,date_prod,did,kind,length,title) VALUES
-    				($1, $2, $3, $4, $5, $6)
-				`,
+			INSERT INTO films (code,date_prod,did,kind,length,title) VALUES
+				($1, $2, $3, $4, $5, $6)
+			`,
 			[]any{"UA502", "1971-07-13", 105, "Comedy", "82 minutes", "Bananas"},
 			q,
 		)

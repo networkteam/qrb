@@ -131,6 +131,10 @@ func Null() builder.Exp {
 	return builder.Null()
 }
 
+func Default() builder.Exp {
+	return builder.Default()
+}
+
 func Interval(s string) builder.Exp {
 	return builder.Interval(s)
 }
@@ -144,4 +148,8 @@ func Exps(exps ...builder.Exp) []builder.Exp {
 
 func InsertInto(tableName string) builder.InsertBuilder {
 	return builder.InsertInto(tableName)
+}
+
+func Update(tableName string) builder.UpdateBuilder {
+	return builder.Update(tableName)
 }

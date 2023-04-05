@@ -772,7 +772,7 @@ func TestSelectBuilder_Where(t *testing.T) {
 	q2 := q1.Where(qrb.N("username").Eq(qrb.Arg("admin")))
 
 	testhelper.AssertSQLWriterEquals(t, "SELECT foo WHERE is_active = true", nil, q1)
-	testhelper.AssertSQLWriterEquals(t, "SELECT foo WHERE (is_active = true) AND (username = $1)", []any{"admin"}, q2)
+	testhelper.AssertSQLWriterEquals(t, "SELECT foo WHERE is_active = true AND username = $1", []any{"admin"}, q2)
 }
 
 func TestSelectBuilder_GroupBy(t *testing.T) {

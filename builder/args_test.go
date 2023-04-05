@@ -38,7 +38,7 @@ func TestBind(t *testing.T) {
 			ToSQL()
 
 		require.NoError(t, err)
-		assert.Equal(t, "SELECT * FROM employees WHERE (firstname ILIKE $1) OR (lastname ILIKE $1)", sql)
+		assert.Equal(t, "SELECT * FROM employees WHERE firstname ILIKE $1 OR lastname ILIKE $1", sql)
 		assert.Equal(t, []any{"Jo%"}, args)
 	})
 
@@ -60,7 +60,7 @@ func TestBind(t *testing.T) {
 			ToSQL()
 
 		require.NoError(t, err)
-		assert.Equal(t, "SELECT * FROM employees WHERE ((firstname ILIKE $1) OR (lastname ILIKE $1)) AND (active = $2)", sql)
+		assert.Equal(t, "SELECT * FROM employees WHERE (firstname ILIKE $1 OR lastname ILIKE $1) AND active = $2", sql)
 		assert.Equal(t, []any{"Jo%", true}, args)
 	})
 
@@ -92,7 +92,7 @@ func TestBind(t *testing.T) {
 			ToSQL()
 
 		require.NoError(t, err)
-		assert.Equal(t, "SELECT * FROM employees WHERE ((firstname ILIKE $1) OR (lastname ILIKE $1)) AND (active = $2)", sql)
+		assert.Equal(t, "SELECT * FROM employees WHERE (firstname ILIKE $1 OR lastname ILIKE $1) AND active = $2", sql)
 		assert.Equal(t, []any{"Jo%", true}, args)
 	})
 }

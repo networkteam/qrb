@@ -31,7 +31,7 @@ const (
 //
 // Example:
 //
-//	N("a").Op("+", Int(5))
+//	N("a").Op(OpAdd, Int(5))
 func (b ExpBase) Op(op Operator, rgt Exp) Exp {
 	return opExp{
 		lft: b.Exp,
@@ -169,9 +169,14 @@ func (c junctionExp) WriteSQL(sb *SQLBuilder) {
 			sb.WriteString(c.op)
 			sb.WriteRune(' ')
 		}
-		sb.WriteRune('(')
-		exp.WriteSQL(sb)
-		sb.WriteRune(')')
+		// Check if the expression is a junction expression and wrap it in parentheses.
+		if _, ok := exp.(junctionExp); ok {
+			sb.WriteRune('(')
+			exp.WriteSQL(sb)
+			sb.WriteRune(')')
+		} else {
+			exp.WriteSQL(sb)
+		}
 	}
 }
 
