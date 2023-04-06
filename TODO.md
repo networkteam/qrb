@@ -9,9 +9,9 @@
       * [ ] Support `ON CONFLICT` clause
       * [x] Support `RETURNING` clause
     * [x] Add `Update` statement
-      * [ ] Support `WITH` queries
+      * [x] Support `WITH` queries
       * [ ] Suppport `SetColumnList` to set column names from expressions or a sub-select
-      * [ ] Support `FROM` clause for joins
+      * [x] Support `FROM` clause for joins
       * [ ] Support `WHERE CURRENT OF cursor_name` clause
       * [x] Support `RETURNING` clause
     * [x] Add `Delete` statement

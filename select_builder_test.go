@@ -543,8 +543,7 @@ func TestSelectBuilder(t *testing.T) {
 
 			// From the docs: To use ORDINALITY together with a column definition list, you must use the ROWS FROM( ... ) syntax and put the column definition list inside ROWS FROM( ... ).
 
-			sql, _, err := qrb.Build(q).ToSQL()
-			t.Log(sql)
+			_, _, err := qrb.Build(q).ToSQL()
 			require.Error(t, err)
 		})
 
