@@ -158,6 +158,14 @@ func (b WithBuilder) Update(tableName string) UpdateBuilder {
 	}
 }
 
+// DeleteFrom starts a new DeleteBuilder following the with clause.
+func (b WithBuilder) DeleteFrom(tableName string) DeleteBuilder {
+	return DeleteBuilder{
+		withQueries: b.withQueries,
+		tableName:   tableName,
+	}
+}
+
 type WithQuery interface {
 	SQLWriter
 	// isWithQuery is a marker method to ensure that multiple builder types can be used as WITH queries.

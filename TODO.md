@@ -15,14 +15,20 @@
       * [ ] Support `WHERE CURRENT OF cursor_name` clause
       * [x] Support `RETURNING` clause
     * [x] Add `Delete` statement
-      * [ ] Support `WITH` queries
+      * [x] Support `WITH` queries
       * [ ] Support `ONLY` and `table_name *`
-      * [ ] Support `USING` clause
+      * [x] Support `USING` clause
       * [ ] Support `WHERE CURRENT OF cursor_name` clause
-      * [ ] Support `RETURNING` clause
+      * [x] Support `RETURNING` clause
 * Select:
     * [ ] Support locking clauses
     * [ ] Support window functions
+* Expression:
+  * Implement more functions and operators from https://www.postgresql.org/docs/15/functions.html
+    * [x] IN with subquery
+    * [ ] IN with scalar expressions
+    * [x] EXISTS
+    * ...
 * [x] Reduce exported types on `qrb` package
 * [x] Check if we want to add `.As()` to `N` to improve select lists and from clauses
     * Not sure for now, since output names and aliases, column aliases and column definitions differ between select

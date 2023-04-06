@@ -767,11 +767,32 @@ func TestSelectBuilder_SelectAs(t *testing.T) {
 }
 
 func TestSelectBuilder_Where(t *testing.T) {
-	q1 := qrb.Select(qrb.N("foo")).Select().Where(qrb.N("is_active").Eq(qrb.Bool(true)))
-	q2 := q1.Where(qrb.N("username").Eq(qrb.Arg("admin")))
+	t.Run("immutability", func(t *testing.T) {
+		q1 := qrb.Select(qrb.N("foo")).Select().Where(qrb.N("is_active").Eq(qrb.Bool(true)))
+		q2 := q1.Where(qrb.N("username").Eq(qrb.Arg("admin")))
 
-	testhelper.AssertSQLWriterEquals(t, "SELECT foo WHERE is_active = true", nil, q1)
-	testhelper.AssertSQLWriterEquals(t, "SELECT foo WHERE is_active = true AND username = $1", []any{"admin"}, q2)
+		testhelper.AssertSQLWriterEquals(t, "SELECT foo WHERE is_active = true", nil, q1)
+		testhelper.AssertSQLWriterEquals(t, "SELECT foo WHERE is_active = true AND username = $1", []any{"admin"}, q2)
+	})
+
+	t.Run("where exists", func(t *testing.T) {
+		q := qrb.Select(qrb.N("col1")).
+			From(qrb.N("tab1")).
+			Where(qrb.Exists(
+				qrb.Select(qrb.Int(1)).From(qrb.N("tab2")).Where(qrb.N("col2").Eq(qrb.N("tab1.col2"))),
+			))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT col1
+			FROM tab1
+			WHERE EXISTS (SELECT 1 FROM tab2 WHERE col2 = tab1.col2)
+			`,
+			nil,
+			q,
+		)
+	})
 }
 
 func TestSelectBuilder_GroupBy(t *testing.T) {

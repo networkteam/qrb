@@ -78,6 +78,8 @@ func TestUpdateBuilder(t *testing.T) {
 	})
 
 	t.Run("with", func(t *testing.T) {
+		// Example borrowed from https://medium.com/@mnu/update-a-postgresql-table-using-a-with-query-648eefaae2a6
+
 		q := qrb.With("line_journey_pattern").As(
 			qrb.Select(qrb.N("jp.id")).As("journey_pattern_id").
 				Select(qrb.N("l.name")).As("line_name").

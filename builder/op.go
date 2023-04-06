@@ -200,3 +200,57 @@ func (c castExp) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("::")
 	sb.WriteString(c.typ)
 }
+
+func (b ExpBase) In(selectOrExpressions SelectOrExpressions) Exp {
+	return inExp{
+		lft: b.Exp,
+		op:  "IN",
+		rgt: selectOrExpressions,
+	}
+}
+
+func (b ExpBase) NotIn(selectOrExpressions SelectOrExpressions) Exp {
+	return inExp{
+		lft: b.Exp,
+		op:  "NOT IN",
+		rgt: selectOrExpressions,
+	}
+}
+
+type SelectOrExpressions interface {
+	Exp
+	isSelectOrExpressions()
+}
+
+type inExp struct {
+	lft Exp
+	op  string
+	rgt SelectOrExpressions
+}
+
+func (c inExp) IsExp() {}
+
+func (c inExp) WriteSQL(sb *SQLBuilder) {
+	c.lft.WriteSQL(sb)
+	sb.WriteRune(' ')
+	sb.WriteString(c.op)
+	sb.WriteRune(' ')
+	c.rgt.WriteSQL(sb)
+}
+
+func Exists(subquery SelectExp) Exp {
+	return existsExp{
+		subquery: subquery,
+	}
+}
+
+type existsExp struct {
+	subquery SelectExp
+}
+
+func (c existsExp) IsExp() {}
+
+func (c existsExp) WriteSQL(sb *SQLBuilder) {
+	sb.WriteString("EXISTS ")
+	c.subquery.WriteSQL(sb)
+}

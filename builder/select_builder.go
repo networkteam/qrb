@@ -12,11 +12,12 @@ type SelectBuilder struct {
 	parts selectQueryParts
 }
 
-func (b SelectBuilder) IsExp()            {}
-func (b SelectBuilder) isFromExp()        {}
-func (b SelectBuilder) isFromLateralExp() {}
-func (b SelectBuilder) isSelect()         {}
-func (b SelectBuilder) isWithQuery()      {}
+func (b SelectBuilder) IsExp()                 {}
+func (b SelectBuilder) isFromExp()             {}
+func (b SelectBuilder) isFromLateralExp()      {}
+func (b SelectBuilder) isSelect()              {}
+func (b SelectBuilder) isWithQuery()           {}
+func (b SelectBuilder) isSelectOrExpressions() {}
 
 type SelectExp interface {
 	Exp
