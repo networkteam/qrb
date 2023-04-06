@@ -53,9 +53,7 @@ func (b InsertBuilder) DefaultValues() InsertBuilder {
 // It can be called multiple times to insert multiple rows.
 func (b InsertBuilder) Values(values ...Exp) InsertBuilder {
 	newBuilder := b
-
-	newBuilder.valueLists = make([][]Exp, len(newBuilder.valueLists), len(newBuilder.valueLists)+1)
-	copy(newBuilder.valueLists, b.valueLists)
+	cloneSlice(&newBuilder.valueLists, b.valueLists, 1)
 
 	newBuilder.valueLists = append(newBuilder.valueLists, values)
 	return newBuilder
@@ -93,9 +91,7 @@ func (b InsertBuilder) Query(query SelectExp) InsertBuilder {
 
 func (b InsertBuilder) Returning(outputExpression Exp) ReturningInsertBuilder {
 	newBuilder := b
-
-	newBuilder.returningItems = make(returningItems, len(b.returningItems), len(b.returningItems)+1)
-	copy(newBuilder.returningItems, b.returningItems)
+	newBuilder.returningItems = b.returningItems.cloneSlice(1)
 
 	newBuilder.returningItems = append(newBuilder.returningItems, returningItem{
 		outputExpression: outputExpression,
@@ -111,9 +107,7 @@ type ReturningInsertBuilder struct {
 // As sets the output name for the last output expression.
 func (b ReturningInsertBuilder) As(outputName string) InsertBuilder {
 	newBuilder := b.InsertBuilder
-
-	newBuilder.returningItems = make(returningItems, len(b.returningItems), len(b.returningItems)+1)
-	copy(newBuilder.returningItems, b.returningItems)
+	newBuilder.returningItems = b.returningItems.cloneSlice(0)
 
 	lastIdx := len(newBuilder.returningItems) - 1
 	newBuilder.returningItems[lastIdx].outputName = outputName
@@ -140,6 +134,12 @@ func (i returningItems) WriteSQL(sb *SQLBuilder) {
 			sb.WriteString(item.outputName)
 		}
 	}
+}
+
+func (i returningItems) cloneSlice(additionalCapacity int) returningItems {
+	newSlice := make(returningItems, len(i), len(i)+additionalCapacity)
+	copy(newSlice, i)
+	return newSlice
 }
 
 var ErrInsertValuesAndQuery = errors.New("insert: cannot set both values and query")

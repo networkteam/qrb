@@ -29,12 +29,12 @@ type funcColumnDefinition struct {
 	typ  string
 }
 
-func (f FuncBuilder) IsExp()            {}
-func (f FuncBuilder) isFromExp()        {}
-func (f FuncBuilder) isFromLateralExp() {}
+func (b FuncBuilder) IsExp()            {}
+func (b FuncBuilder) isFromExp()        {}
+func (b FuncBuilder) isFromLateralExp() {}
 
-func (f FuncBuilder) WithOrdinality() FuncBuilder {
-	newBuilder := f
+func (b FuncBuilder) WithOrdinality() FuncBuilder {
+	newBuilder := b
 	newBuilder.withOrdinality = true
 
 	newBuilder.Exp = newBuilder // self-reference for base methods
@@ -42,8 +42,8 @@ func (f FuncBuilder) WithOrdinality() FuncBuilder {
 	return newBuilder
 }
 
-func (f FuncBuilder) As(alias string) FuncBuilder {
-	newBuilder := f
+func (b FuncBuilder) As(alias string) FuncBuilder {
+	newBuilder := b
 	newBuilder.alias = alias
 
 	newBuilder.Exp = newBuilder // self-reference for base methods
@@ -53,11 +53,9 @@ func (f FuncBuilder) As(alias string) FuncBuilder {
 
 // ColumnDefinition adds a column definition to the function call.
 // To add multiple column definitions, call this method multiple times.
-func (f FuncBuilder) ColumnDefinition(name, typ string) FuncBuilder {
-	newBuilder := f
-
-	newBuilder.columnDefs = make([]funcColumnDefinition, len(f.columnDefs), len(f.columnDefs)+1)
-	copy(newBuilder.columnDefs, f.columnDefs)
+func (b FuncBuilder) ColumnDefinition(name, typ string) FuncBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.columnDefs, b.columnDefs, 1)
 
 	newBuilder.columnDefs = append(newBuilder.columnDefs, funcColumnDefinition{
 		name: name,
@@ -71,33 +69,33 @@ func (f FuncBuilder) ColumnDefinition(name, typ string) FuncBuilder {
 
 var errWithOrdinalityAndColumnDefinitions = errors.New("func: WITH ORDINALITY is not supported with column definitions, use ROWS FROM instead")
 
-func (f FuncBuilder) WriteSQL(sb *SQLBuilder) {
-	sb.WriteString(f.name)
+func (b FuncBuilder) WriteSQL(sb *SQLBuilder) {
+	sb.WriteString(b.name)
 	sb.WriteRune('(')
-	for i, arg := range f.args {
+	for i, arg := range b.args {
 		if i > 0 {
 			sb.WriteRune(',')
 		}
 		arg.WriteSQL(sb)
 	}
 	sb.WriteRune(')')
-	if f.withOrdinality {
+	if b.withOrdinality {
 		sb.WriteString(" WITH ORDINALITY")
 	}
-	if f.alias != "" {
+	if b.alias != "" {
 		sb.WriteString(" AS ")
-		sb.WriteString(f.alias)
+		sb.WriteString(b.alias)
 	}
-	if len(f.columnDefs) > 0 {
-		if f.withOrdinality {
+	if len(b.columnDefs) > 0 {
+		if b.withOrdinality {
 			sb.AddError(errWithOrdinalityAndColumnDefinitions)
 			return
 		}
-		if f.alias == "" {
+		if b.alias == "" {
 			sb.WriteString(" AS")
 		}
 		sb.WriteString(" (")
-		for i, def := range f.columnDefs {
+		for i, def := range b.columnDefs {
 			if i > 0 {
 				sb.WriteString(",")
 			}

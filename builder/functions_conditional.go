@@ -17,9 +17,7 @@ func Case(exp ...Exp) CaseBuilder {
 
 func (b CaseBuilder) When(condition Exp) CaseWhenBuilder {
 	newBuilder := b
-
-	newBuilder.conditions = make([]caseCondition, len(newBuilder.conditions), len(newBuilder.conditions)+1)
-	copy(newBuilder.conditions, b.conditions)
+	cloneSlice(&newBuilder.conditions, b.conditions, 1)
 
 	newBuilder.conditions = append(newBuilder.conditions, caseCondition{
 		condition: condition,
@@ -57,11 +55,9 @@ type CaseWhenBuilder struct {
 	builder CaseBuilder
 }
 
-func (c CaseWhenBuilder) Then(result Exp) CaseBuilder {
-	newBuilder := c.builder
-
-	newBuilder.conditions = make([]caseCondition, len(newBuilder.conditions))
-	copy(newBuilder.conditions, c.builder.conditions)
+func (b CaseWhenBuilder) Then(result Exp) CaseBuilder {
+	newBuilder := b.builder
+	cloneSlice(&newBuilder.conditions, b.builder.conditions, 0)
 
 	newBuilder.conditions[len(newBuilder.conditions)-1].result = result
 

@@ -10,7 +10,7 @@ const (
 	opGreaterThanOrEqual Operator = ">="
 	opNotEqual           Operator = "<>"
 
-	opConcat Operator = "||"
+	OpConcat Operator = "||"
 
 	OpAdd Operator = "+"
 	OpSub Operator = "-"
@@ -32,12 +32,13 @@ const (
 // Example:
 //
 //	N("a").Op(OpAdd, Int(5))
-func (b ExpBase) Op(op Operator, rgt Exp) Exp {
-	return opExp{
+func (b ExpBase) Op(op Operator, rgt Exp) ExpBase {
+	exp := opExp{
 		lft: b.Exp,
 		op:  op,
 		rgt: rgt,
 	}
+	return ExpBase{Exp: exp}
 }
 
 type opExp struct {
@@ -84,8 +85,8 @@ func (b ExpBase) Gte(rgt Exp) Exp {
 
 // --- String operators
 
-func (b ExpBase) Concat(rgt Exp) Exp {
-	return b.Op(opConcat, rgt)
+func (b ExpBase) Concat(rgt Exp) ExpBase {
+	return b.Op(OpConcat, rgt)
 }
 
 // --- Unary expressions

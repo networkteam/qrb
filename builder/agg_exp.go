@@ -47,9 +47,7 @@ func (b AggExpBuilder) Distinct() AggExpBuilder {
 // If AggExpBuilder.WithinGroup is called, the ORDER BY clause is used after the aggregate function in WITHIN GROUP.
 func (b AggExpBuilder) OrderBy(exp Exp) OrderByAggExpBuilder {
 	newBuilder := b
-
-	newBuilder.orderBys = make([]orderByClause, len(b.orderBys), len(b.orderBys)+1)
-	copy(newBuilder.orderBys, b.orderBys)
+	cloneSlice(&newBuilder.orderBys, b.orderBys, 1)
 
 	newBuilder.orderBys = append(newBuilder.orderBys, orderByClause{
 		exp: exp,
@@ -71,11 +69,10 @@ func (b OrderByAggExpBuilder) Desc() OrderByAggExpBuilder {
 
 func (b OrderByAggExpBuilder) setOrder(order sortOrder) OrderByAggExpBuilder {
 	newBuilder := b
+	cloneSlice(&newBuilder.orderBys, b.orderBys, 0)
 
-	newBuilder.orderBys = make([]orderByClause, len(b.orderBys))
-	copy(newBuilder.orderBys, b.orderBys)
-
-	newBuilder.orderBys[len(newBuilder.orderBys)-1].order = order
+	lastIdx := len(newBuilder.orderBys) - 1
+	newBuilder.orderBys[lastIdx].order = order
 
 	newBuilder.Exp = newBuilder // self-reference for base methods
 	return newBuilder
@@ -91,9 +88,7 @@ func (b OrderByAggExpBuilder) NullsLast() OrderByAggExpBuilder {
 
 func (b OrderByAggExpBuilder) setNulls(nulls sortNulls) OrderByAggExpBuilder {
 	newBuilder := b
-
-	newBuilder.orderBys = make([]orderByClause, len(b.orderBys))
-	copy(newBuilder.orderBys, b.orderBys)
+	cloneSlice(&newBuilder.orderBys, b.orderBys, 0)
 
 	newBuilder.orderBys[len(newBuilder.orderBys)-1].nulls = nulls
 
@@ -105,9 +100,7 @@ func (b OrderByAggExpBuilder) setNulls(nulls sortNulls) OrderByAggExpBuilder {
 // Multiple calls to Filter are joined with AND.
 func (b AggExpBuilder) Filter(cond Exp) AggExpBuilder {
 	newBuilder := b
-
-	newBuilder.filterConjunction = make([]Exp, len(b.filterConjunction), len(b.filterConjunction)+1)
-	copy(newBuilder.filterConjunction, b.filterConjunction)
+	cloneSlice(&newBuilder.filterConjunction, b.filterConjunction, 1)
 
 	newBuilder.filterConjunction = append(newBuilder.filterConjunction, cond)
 

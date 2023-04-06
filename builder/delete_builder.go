@@ -28,9 +28,7 @@ func (b DeleteBuilder) As(alias string) DeleteBuilder {
 // Multiple calls to Where are joined with AND.
 func (b DeleteBuilder) Where(cond Exp) DeleteBuilder {
 	newBuilder := b
-
-	newBuilder.whereConjunction = make([]Exp, len(b.whereConjunction), len(b.whereConjunction)+1)
-	copy(newBuilder.whereConjunction, b.whereConjunction)
+	cloneSlice(&newBuilder.whereConjunction, b.whereConjunction, 1)
 
 	newBuilder.whereConjunction = append(newBuilder.whereConjunction, cond)
 	return newBuilder

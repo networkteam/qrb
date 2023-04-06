@@ -36,3 +36,8 @@ func pqQuoteLiteral(literal string) string {
 	}
 	return literal
 }
+
+func cloneSlice[T any](dst *[]T, src []T, additionalCapacity int) {
+	*dst = make([]T, len(src), len(src)+additionalCapacity)
+	copy(*dst, src)
+}

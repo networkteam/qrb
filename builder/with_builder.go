@@ -46,9 +46,7 @@ func (b WithBuilder) WithRecursive(queryName string) WithWithBuilder {
 
 func (b WithBuilder) startWithQuery(queryName string, recursive bool) WithWithBuilder {
 	newBuilder := b
-	newBuilder.withQueries = make(withQueries, len(b.withQueries), len(b.withQueries)+1)
-	copy(newBuilder.withQueries, b.withQueries)
-
+	newBuilder.withQueries = b.withQueries.cloneSlice(1)
 	newBuilder.withQueries = append(newBuilder.withQueries, withQuery{
 		recursive: recursive,
 		queryName: queryName,
@@ -62,8 +60,7 @@ func (b WithBuilder) startWithQuery(queryName string, recursive bool) WithWithBu
 // ColumnNames sets the column names for the currently started WITH query.
 func (b WithWithBuilder) ColumnNames(names ...string) WithWithBuilder {
 	newBuilder := b.builder
-	newBuilder.withQueries = make(withQueries, len(newBuilder.withQueries), len(newBuilder.withQueries)+1)
-	copy(newBuilder.withQueries, b.builder.withQueries)
+	newBuilder.withQueries = b.builder.withQueries.cloneSlice(0)
 
 	lastIdx := len(newBuilder.withQueries) - 1
 	newBuilder.withQueries[lastIdx].columnNames = names
@@ -89,8 +86,7 @@ func (b WithWithBuilder) AsMaterialized(builder WithQuery) WithBuilder {
 
 func (b WithWithBuilder) asWithMaterialized(query WithQuery, materialized *bool) WithBuilder {
 	newBuilder := b.builder
-	newBuilder.withQueries = make([]withQuery, len(newBuilder.withQueries), len(newBuilder.withQueries)+1)
-	copy(newBuilder.withQueries, b.builder.withQueries)
+	newBuilder.withQueries = b.builder.withQueries.cloneSlice(0)
 
 	lastIdx := len(newBuilder.withQueries) - 1
 	newBuilder.withQueries[lastIdx].query = query
@@ -126,8 +122,7 @@ func (b WithSearchBuilder) By(columnName Exp, columnNames ...Exp) WithSearchByBu
 
 func (b WithSearchByBuilder) Set(searchColumnName string) WithBuilder {
 	newBuilder := b.builder
-	newBuilder.withQueries = make([]withQuery, len(newBuilder.withQueries), len(newBuilder.withQueries)+1)
-	copy(newBuilder.withQueries, b.builder.withQueries)
+	newBuilder.withQueries = b.builder.withQueries.cloneSlice(0)
 
 	lastIdx := len(newBuilder.withQueries) - 1
 	newBuilder.withQueries[lastIdx].search = &withQuerySearch{
@@ -150,6 +145,14 @@ func (b WithBuilder) Select(exps ...Exp) SelectSelectBuilder {
 // InsertInto starts a new InsertBuilder following the with clause.
 func (b WithBuilder) InsertInto(tableName string) InsertBuilder {
 	return InsertBuilder{
+		withQueries: b.withQueries,
+		tableName:   tableName,
+	}
+}
+
+// Update starts a new UpdateBuilder following the with clause.
+func (b WithBuilder) Update(tableName string) UpdateBuilder {
+	return UpdateBuilder{
 		withQueries: b.withQueries,
 		tableName:   tableName,
 	}
@@ -255,4 +258,10 @@ func (w withQuery) writeSQL(sb *SQLBuilder) {
 		sb.WriteString(" SET ")
 		sb.WriteString(w.search.setColumnName)
 	}
+}
+
+func (q withQueries) cloneSlice(additionalCapacity int) withQueries {
+	newSlice := make(withQueries, len(q), len(q)+additionalCapacity)
+	copy(newSlice, q)
+	return newSlice
 }

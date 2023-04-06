@@ -77,6 +77,43 @@ func TestUpdateBuilder(t *testing.T) {
 		})
 	})
 
+	t.Run("with", func(t *testing.T) {
+		q := qrb.With("line_journey_pattern").As(
+			qrb.Select(qrb.N("jp.id")).As("journey_pattern_id").
+				Select(qrb.N("l.name")).As("line_name").
+				From(qrb.N("journey_patterns")).As("jp").
+				Join(qrb.N("routes")).As("r").On(qrb.N("jp.route_id").Eq(qrb.N("r.id"))).
+				Join(qrb.N("lines")).As("l").On(qrb.N("r.line_id").Eq(qrb.N("l.id"))).
+				Where(qrb.And(
+					qrb.N("l.name").IsNotNull(),
+					qrb.N("l.name").Neq(qrb.String("")),
+				)),
+		).Update("journey_patterns").As("jp").
+			Set("name", qrb.N("ljp.line_name").Concat(qrb.String(" - ")).Concat(qrb.N("jp.name"))).
+			From(qrb.N("line_journey_pattern")).As("ljp").
+			Where(qrb.N("ljp.journey_pattern_id").Eq(qrb.N("jp.id")))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+				WITH line_journey_pattern AS (
+					SELECT jp.id AS journey_pattern_id, l.name AS line_name
+					FROM journey_patterns AS jp
+							 JOIN routes AS r ON jp.route_id = r.id
+							 JOIN lines AS l ON r.line_id = l.id
+					WHERE l.name IS NOT NULL
+					  AND l.name <> ''
+				)
+				UPDATE journey_patterns AS jp
+				SET name = ljp.line_name || ' - ' || jp.name
+				FROM line_journey_pattern AS ljp
+				WHERE ljp.journey_pattern_id = jp.id
+				`,
+			nil,
+			q,
+		)
+	})
+
 	t.Run("set map", func(t *testing.T) {
 		q := qrb.
 			Update("films").

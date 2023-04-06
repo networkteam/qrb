@@ -57,12 +57,8 @@ type selectCombination struct {
 // AppendWith adds the given with queries to the select builder.
 func (b SelectBuilder) AppendWith(w WithBuilder) SelectBuilder {
 	newBuilder := b
-
-	newBuilder.withQueries = make(withQueries, len(b.withQueries), len(b.withQueries)+len(w.withQueries))
-	copy(newBuilder.withQueries, b.withQueries)
-
+	newBuilder.withQueries = b.withQueries.cloneSlice(len(w.withQueries))
 	newBuilder.withQueries = append(newBuilder.withQueries, w.withQueries...)
-
 	return newBuilder
 }
 
@@ -96,9 +92,7 @@ func (b SelectDistinctBuilder) On(exp Exp, exps ...Exp) SelectBuilder {
 
 func (b SelectSelectBuilder) As(alias string) SelectSelectBuilder {
 	newBuilder := b.SelectBuilder
-
-	newBuilder.parts.selectList = make([]outputExp, len(b.parts.selectList), len(b.parts.selectList)+1)
-	copy(newBuilder.parts.selectList, b.parts.selectList)
+	cloneSlice(&newBuilder.parts.selectList, b.parts.selectList, 0)
 
 	lastIdx := len(newBuilder.parts.selectList) - 1
 	newBuilder.parts.selectList[lastIdx].alias = alias
@@ -116,9 +110,7 @@ type outputExp struct {
 // Select adds the given expressions to the select list.
 func (b SelectBuilder) Select(exps ...Exp) SelectSelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.selectList = make([]outputExp, len(b.parts.selectList), len(b.parts.selectList)+len(exps))
-	copy(newBuilder.parts.selectList, b.parts.selectList)
+	cloneSlice(&newBuilder.parts.selectList, b.parts.selectList, len(exps))
 
 	for _, exp := range exps {
 		newBuilder.parts.selectList = append(newBuilder.parts.selectList, outputExp{
@@ -167,9 +159,7 @@ type FromExp interface {
 
 func (b SelectBuilder) From(from FromExp) FromSelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from), len(b.parts.from)+1)
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 1)
 
 	newBuilder.parts.from = append(newBuilder.parts.from, fromItem{
 		from: from,
@@ -186,9 +176,7 @@ type FromLateralExp interface {
 
 func (b SelectBuilder) FromLateral(from FromLateralExp) FromSelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from), len(b.parts.from)+1)
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 1)
 
 	newBuilder.parts.from = append(newBuilder.parts.from, fromItem{
 		lateral: true,
@@ -201,9 +189,7 @@ func (b SelectBuilder) FromLateral(from FromLateralExp) FromSelectBuilder {
 
 func (b SelectBuilder) FromOnly(from FromExp) FromSelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from), len(b.parts.from)+1)
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 1)
 
 	newBuilder.parts.from = append(newBuilder.parts.from, fromItem{
 		only: true,
@@ -267,8 +253,7 @@ type FromSelectBuilder struct {
 // As sets the alias for the last added from item.
 func (b FromSelectBuilder) As(alias string) FromSelectBuilder {
 	newBuilder := b
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from))
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 0)
 
 	lastIdx := len(newBuilder.parts.from) - 1
 	newBuilder.parts.from[lastIdx].alias = alias
@@ -279,8 +264,7 @@ func (b FromSelectBuilder) As(alias string) FromSelectBuilder {
 // ColumnAliases sets the column aliases for the last added from item.
 func (b FromSelectBuilder) ColumnAliases(aliases ...string) FromSelectBuilder {
 	newBuilder := b
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from))
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 0)
 
 	lastIdx := len(newBuilder.parts.from) - 1
 	newBuilder.parts.from[lastIdx].columnAliases = aliases
@@ -400,9 +384,7 @@ func (b SelectBuilder) FullJoin(from FromExp) JoinSelectBuilder {
 
 func (b SelectBuilder) addJoin(joinType joinType, from FromExp, lateral bool) JoinSelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from), len(b.parts.from)+1)
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 1)
 
 	newBuilder.parts.from = append(newBuilder.parts.from, fromItem{
 		from: join{
@@ -422,8 +404,7 @@ type JoinSelectBuilder struct {
 
 func (b JoinSelectBuilder) As(alias string) JoinSelectBuilder {
 	newBuilder := b
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from))
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 0)
 
 	lastIdx := len(newBuilder.parts.from) - 1
 	lastFromItem := newBuilder.parts.from[lastIdx]
@@ -438,8 +419,7 @@ func (b JoinSelectBuilder) As(alias string) JoinSelectBuilder {
 
 func (b JoinSelectBuilder) On(cond Exp, rest ...Exp) SelectBuilder {
 	newBuilder := b.SelectBuilder
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from))
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 0)
 
 	lastIdx := len(newBuilder.parts.from) - 1
 	lastFromItem := newBuilder.parts.from[lastIdx]
@@ -462,8 +442,7 @@ func (b JoinSelectBuilder) On(cond Exp, rest ...Exp) SelectBuilder {
 
 func (b JoinSelectBuilder) Using(columns ...string) SelectBuilder {
 	newBuilder := b.SelectBuilder
-	newBuilder.parts.from = make([]fromItem, len(b.parts.from))
-	copy(newBuilder.parts.from, b.parts.from)
+	cloneSlice(&newBuilder.parts.from, b.parts.from, 0)
 
 	lastIdx := len(newBuilder.parts.from) - 1
 	lastFromItem := newBuilder.parts.from[lastIdx]
@@ -480,9 +459,7 @@ func (b JoinSelectBuilder) Using(columns ...string) SelectBuilder {
 // Multiple calls to Where are joined with AND.
 func (b SelectBuilder) Where(cond Exp) SelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.whereConjunction = make([]Exp, len(b.parts.whereConjunction), len(b.parts.whereConjunction)+1)
-	copy(newBuilder.parts.whereConjunction, b.parts.whereConjunction)
+	cloneSlice(&newBuilder.parts.whereConjunction, b.parts.whereConjunction, 1)
 
 	newBuilder.parts.whereConjunction = append(newBuilder.parts.whereConjunction, cond)
 	return newBuilder
@@ -554,12 +531,9 @@ type GroupyBySelectBuilder struct {
 
 func (b SelectBuilder) groupByAdd(el groupingElement) GroupyBySelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.groupBys = make([]groupingElement, len(b.parts.groupBys), len(b.parts.groupBys)+1)
-	copy(newBuilder.parts.groupBys, b.parts.groupBys)
+	cloneSlice(&newBuilder.parts.groupBys, b.parts.groupBys, 1)
 
 	newBuilder.parts.groupBys = append(newBuilder.parts.groupBys, el)
-
 	return GroupyBySelectBuilder{newBuilder}
 }
 
@@ -621,9 +595,7 @@ func (e groupingElement) writeSet(sb *SQLBuilder, exps []Exp) {
 // Multiple calls to Having are joined with AND.
 func (b SelectBuilder) Having(cond Exp) SelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.havingConjunction = make([]Exp, len(b.parts.havingConjunction), len(b.parts.havingConjunction)+1)
-	copy(newBuilder.parts.havingConjunction, b.parts.havingConjunction)
+	cloneSlice(&newBuilder.parts.havingConjunction, b.parts.havingConjunction, 1)
 
 	newBuilder.parts.havingConjunction = append(newBuilder.parts.havingConjunction, cond)
 	return newBuilder
@@ -649,9 +621,7 @@ func (b SelectBuilder) Except() CombinationBuilder {
 
 func (b SelectBuilder) addCombination(typ combinationType) CombinationBuilder {
 	newBuilder := b
-
-	newBuilder.combinations = make([]selectCombination, len(b.combinations), len(b.combinations)+1)
-	copy(newBuilder.combinations, b.combinations)
+	cloneSlice(&newBuilder.combinations, b.combinations, 1)
 
 	newBuilder.combinations = append(newBuilder.combinations, selectCombination{
 		parts:           b.parts,
@@ -671,9 +641,7 @@ type CombinationBuilder struct {
 
 func (b CombinationBuilder) All() CombinationBuilder {
 	newBuilder := b
-
-	newBuilder.combinations = make([]selectCombination, len(b.combinations))
-	copy(newBuilder.combinations, b.combinations)
+	cloneSlice(&newBuilder.combinations, b.combinations, 0)
 
 	lastIdx := len(newBuilder.combinations) - 1
 	newBuilder.combinations[lastIdx].all = true
@@ -685,9 +653,7 @@ func (b CombinationBuilder) All() CombinationBuilder {
 
 func (b SelectBuilder) OrderBy(exp Exp) OrderBySelectBuilder {
 	newBuilder := b
-
-	newBuilder.parts.orderBys = make([]orderByClause, len(b.parts.orderBys), len(b.parts.orderBys)+1)
-	copy(newBuilder.parts.orderBys, b.parts.orderBys)
+	cloneSlice(&newBuilder.parts.orderBys, b.parts.orderBys, 1)
 
 	newBuilder.parts.orderBys = append(newBuilder.parts.orderBys, orderByClause{
 		exp: exp,
@@ -729,8 +695,7 @@ func (b OrderBySelectBuilder) Desc() OrderBySelectBuilder {
 
 func (b OrderBySelectBuilder) setOrder(order sortOrder) OrderBySelectBuilder {
 	newBuilder := b
-	newBuilder.parts.orderBys = make([]orderByClause, len(b.parts.orderBys))
-	copy(newBuilder.parts.orderBys, b.parts.orderBys)
+	cloneSlice(&newBuilder.parts.orderBys, b.parts.orderBys, 0)
 
 	lastIdx := len(newBuilder.parts.orderBys) - 1
 	newBuilder.parts.orderBys[lastIdx].order = order
@@ -748,8 +713,7 @@ func (b OrderBySelectBuilder) NullsLast() OrderBySelectBuilder {
 
 func (b OrderBySelectBuilder) setNullsOrder(nulls sortNulls) OrderBySelectBuilder {
 	newBuilder := b
-	newBuilder.parts.orderBys = make([]orderByClause, len(b.parts.orderBys))
-	copy(newBuilder.parts.orderBys, b.parts.orderBys)
+	cloneSlice(&newBuilder.parts.orderBys, b.parts.orderBys, 0)
 
 	lastIdx := len(newBuilder.parts.orderBys) - 1
 	newBuilder.parts.orderBys[lastIdx].nulls = nulls
