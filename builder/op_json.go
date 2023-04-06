@@ -22,7 +22,7 @@ const (
 //	jsonb -> integer → jsonb
 //
 // Extracts nth element of JSON array (array elements are indexed from zero, but negative integers count from the end).
-func (b ExpBase) JsonExtract(rgt Exp) Exp {
+func (b ExpBase) JsonExtract(rgt Exp) ExpBase {
 	return b.Op(opExtract, rgt)
 }
 
@@ -37,7 +37,7 @@ func (b ExpBase) JsonExtract(rgt Exp) Exp {
 //	jsonb ->> integer → text
 //
 // Extracts nth element of JSON array, as text.
-func (b ExpBase) JsonExtractText(rgt Exp) Exp {
+func (b ExpBase) JsonExtractText(rgt Exp) ExpBase {
 	return b.Op(opExtractText, rgt)
 }
 
@@ -51,7 +51,7 @@ func (b ExpBase) JsonExtractText(rgt Exp) Exp {
 // Example:
 //
 //	fn.JsonExtractPath(qrb.String(`{"a": {"b": ["foo","bar"]}}`).Cast("jsonb"), qrb.Array(qrb.String("a"), qrb.String("b")))
-func (b ExpBase) JsonExtractPath(rgt Exp) Exp {
+func (b ExpBase) JsonExtractPath(rgt Exp) ExpBase {
 	return b.Op(opExtractPath, rgt)
 }
 
@@ -65,14 +65,14 @@ func (b ExpBase) JsonExtractPath(rgt Exp) Exp {
 // Example:
 //
 //	fn.JsonExtractPathText(qrb.String(`{"a": {"b": ["foo","bar"]}}`).Cast("jsonb"), qrb.Array(qrb.String("a"), qrb.String("b"), qrb.String("1)))
-func (b ExpBase) JsonExtractPathText(rgt Exp) Exp {
+func (b ExpBase) JsonExtractPathText(rgt Exp) ExpBase {
 	return b.Op(opExtractPathText, rgt)
 }
 
-func (b ExpBase) JsonContains(rgt Exp) Exp {
+func (b ExpBase) JsonContains(rgt Exp) ExpBase {
 	return b.Op(opContains, rgt)
 }
 
-func (b ExpBase) JsonContainedBy(rgt Exp) Exp {
+func (b ExpBase) JsonContainedBy(rgt Exp) ExpBase {
 	return b.Op(opContainedBy, rgt)
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/networkteam/qrb"
-	"github.com/networkteam/qrb/builder"
 	"github.com/networkteam/qrb/internal/testhelper"
 )
 
@@ -31,8 +30,8 @@ func TestUpdateBuilder(t *testing.T) {
 		t.Run("example 2", func(t *testing.T) {
 			q := qrb.
 				Update("weather").
-				Set("temp_lo", qrb.N("temp_lo").Op(builder.OpAdd, qrb.Int(1))).
-				Set("temp_hi", qrb.N("temp_lo").Op(builder.OpAdd, qrb.Int(15))).
+				Set("temp_lo", qrb.N("temp_lo").Plus(qrb.Int(1))).
+				Set("temp_hi", qrb.N("temp_lo").Plus(qrb.Int(15))).
 				Set("prcp", qrb.Default()).
 				Where(qrb.And(
 					qrb.N("city").Eq(qrb.String("San Francisco")),
@@ -53,8 +52,8 @@ func TestUpdateBuilder(t *testing.T) {
 		t.Run("example 2", func(t *testing.T) {
 			q := qrb.
 				Update("weather").
-				Set("temp_lo", qrb.N("temp_lo").Op(builder.OpAdd, qrb.Int(1))).
-				Set("temp_hi", qrb.N("temp_lo").Op(builder.OpAdd, qrb.Int(15))).
+				Set("temp_lo", qrb.N("temp_lo").Plus(qrb.Int(1))).
+				Set("temp_hi", qrb.N("temp_lo").Plus(qrb.Int(15))).
 				Set("prcp", qrb.Default()).
 				Where(qrb.And(
 					qrb.N("city").Eq(qrb.String("San Francisco")),

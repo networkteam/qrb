@@ -87,7 +87,7 @@ func Least(exp builder.Exp, rest ...builder.Exp) builder.FuncExp {
 
 // Arg creates an expression that represents an argument that will be bound to a placeholder with the given value.
 // Each call to Arg will create a new placeholder and emit the argument when writing the query.
-func Arg(argument any) builder.Exp {
+func Arg(argument any) builder.ExpBase {
 	return builder.Arg(argument)
 }
 
@@ -140,6 +140,11 @@ func Default() builder.Exp {
 
 func Interval(s string) builder.Exp {
 	return builder.Interval(s)
+}
+
+// Extract builds the EXTRACT(field FROM source) function.
+func Extract(field string, from builder.Exp) builder.ExpBase {
+	return builder.Extract(field, from)
 }
 
 // Exps returns a slice of expressions, just for syntactic sugar.

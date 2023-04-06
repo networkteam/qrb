@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/networkteam/qrb"
-	"github.com/networkteam/qrb/builder"
 	"github.com/networkteam/qrb/internal/testhelper"
 )
 
@@ -183,7 +182,7 @@ func TestInsertBuilder(t *testing.T) {
 			q := qrb.
 				With("upd").As(
 				qrb.Update("employees").
-					Set("sales_count", qrb.N("sales_count").Op(builder.OpAdd, qrb.Int(1))).
+					Set("sales_count", qrb.N("sales_count").Plus(qrb.Int(1))).
 					Where(qrb.N("id").Eq(
 						qrb.Select(qrb.N("sales_person")).From(qrb.N("accounts")).Where(qrb.N("name").Eq(qrb.String("Acme Corporation"))),
 					)).

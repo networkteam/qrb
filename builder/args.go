@@ -2,9 +2,11 @@ package builder
 
 // Arg creates an expression that represents an argument that will be bound to a placeholder with the given value.
 // Each call to Arg will create a new placeholder and emit the argument when writing the query.
-func Arg(argument any) Exp {
-	return argExp{
-		argument: argument,
+func Arg(argument any) ExpBase {
+	return ExpBase{
+		Exp: argExp{
+			argument: argument,
+		},
 	}
 }
 

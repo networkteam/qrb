@@ -10,35 +10,31 @@ const (
 	opGreaterThanOrEqual Operator = ">="
 	opNotEqual           Operator = "<>"
 
-	OpConcat Operator = "||"
+	opConcat Operator = "||"
 
-	OpAdd Operator = "+"
-	OpSub Operator = "-"
-	OpMul Operator = "*"
-	OpDiv Operator = "/"
-
-	// OpRegexpMatch matches a string with a POSIX regular expression pattern, case-sensitive.
-	OpRegexpMatch Operator = "~"
-	// OpRegexpIMatch matches a string with a POSIX regular expression pattern, case-insensitive.
-	OpRegexpIMatch Operator = "~*"
-	// OpRegexpNotMatch does not match a string with a POSIX regular expression pattern, case-sensitive.
-	OpRegexpNotMatch Operator = "!~"
-	// OpRegexpINotMatch does not match a string with a POSIX regular expression pattern, case-insensitive.
-	OpRegexpINotMatch Operator = "!~*"
+	// opRegexpMatch matches a string with a POSIX regular expression pattern, case-sensitive.
+	opRegexpMatch Operator = "~"
+	// opRegexpIMatch matches a string with a POSIX regular expression pattern, case-insensitive.
+	opRegexpIMatch Operator = "~*"
+	// opRegexpNotMatch does not match a string with a POSIX regular expression pattern, case-sensitive.
+	opRegexpNotMatch Operator = "!~"
+	// opRegexpINotMatch does not match a string with a POSIX regular expression pattern, case-insensitive.
+	opRegexpINotMatch Operator = "!~*"
 )
 
 // Op allows to use arbitrary operators.
 //
 // Example:
 //
-//	N("a").Op(OpAdd, Int(5))
+//	N("a").Op(Operator("^"), Int(5))
 func (b ExpBase) Op(op Operator, rgt Exp) ExpBase {
-	exp := opExp{
-		lft: b.Exp,
-		op:  op,
-		rgt: rgt,
+	return ExpBase{
+		Exp: opExp{
+			lft: b.Exp,
+			op:  op,
+			rgt: rgt,
+		},
 	}
-	return ExpBase{Exp: exp}
 }
 
 type opExp struct {
@@ -86,7 +82,7 @@ func (b ExpBase) Gte(rgt Exp) Exp {
 // --- String operators
 
 func (b ExpBase) Concat(rgt Exp) ExpBase {
-	return b.Op(OpConcat, rgt)
+	return b.Op(opConcat, rgt)
 }
 
 // --- Unary expressions
