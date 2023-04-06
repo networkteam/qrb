@@ -142,11 +142,6 @@ func Interval(s string) builder.Exp {
 	return builder.Interval(s)
 }
 
-// Extract builds the EXTRACT(field FROM source) function.
-func Extract(field string, from builder.Exp) builder.ExpBase {
-	return builder.Extract(field, from)
-}
-
 // Exps returns a slice of expressions, just for syntactic sugar.
 // TODO We could use this as a way to express a scalar list of expressions e.g. for IN by using a custom slice type
 func Exps(exps ...builder.Exp) []builder.Exp {
