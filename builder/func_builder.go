@@ -32,6 +32,7 @@ type funcColumnDefinition struct {
 func (b FuncBuilder) IsExp()            {}
 func (b FuncBuilder) isFromExp()        {}
 func (b FuncBuilder) isFromLateralExp() {}
+func (b FuncBuilder) noParensExp()      {}
 
 func (b FuncBuilder) WithOrdinality() FuncBuilder {
 	newBuilder := b

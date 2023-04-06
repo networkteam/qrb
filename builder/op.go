@@ -192,7 +192,14 @@ type castExp struct {
 func (c castExp) IsExp() {}
 
 func (c castExp) WriteSQL(sb *SQLBuilder) {
+	_, needsNoParens := c.exp.(noParensExp)
+	if !needsNoParens {
+		sb.WriteRune('(')
+	}
 	c.exp.WriteSQL(sb)
+	if !needsNoParens {
+		sb.WriteRune(')')
+	}
 	sb.WriteString("::")
 	sb.WriteString(c.typ)
 }

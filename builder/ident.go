@@ -22,8 +22,9 @@ type IdentExp struct {
 	ident string
 }
 
-func (i IdentExp) IsExp()     {}
-func (i IdentExp) isFromExp() {}
+func (i IdentExp) IsExp()       {}
+func (i IdentExp) isFromExp()   {}
+func (i IdentExp) noParensExp() {}
 
 var ErrInvalidIdentifier = errors.New("identifier: invalid")
 

@@ -14,7 +14,8 @@ type argExp struct {
 	argument any
 }
 
-func (a argExp) IsExp() {}
+func (a argExp) IsExp()       {}
+func (a argExp) noParensExp() {}
 
 func (a argExp) WriteSQL(sb *SQLBuilder) {
 	p := sb.CreatePlaceholder(a.argument)
@@ -45,7 +46,8 @@ type bindExp struct {
 	name string
 }
 
-func (b bindExp) IsExp() {}
+func (b bindExp) IsExp()       {}
+func (b bindExp) noParensExp() {}
 
 func (b bindExp) WriteSQL(sb *SQLBuilder) {
 	p := sb.BindPlaceholder(b.name)
