@@ -247,7 +247,7 @@ func (w withQuery) writeSQL(sb *SQLBuilder) {
 	}
 	sb.WriteString(" AS ")
 	if w.materialized != nil {
-		if *w.materialized == false {
+		if !*w.materialized {
 			sb.WriteString("NOT ")
 		}
 		sb.WriteString("MATERIALIZED ")

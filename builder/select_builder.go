@@ -206,12 +206,11 @@ func (b SelectBuilder) FromOnly(from FromExp) FromSelectBuilder {
 // [ LATERAL ] ROWS FROM( function_name ( [ argument [, ...] ] ) [ AS ( column_definition [, ...] ) ] [, ...] ) [ WITH ORDINALITY ] [ [ AS ] alias [ ( column_alias [, ...] ) ] ]
 
 type fromItem struct {
-	lateral        bool
-	only           bool
-	from           FromExp
-	alias          string
-	withOrdinality bool
-	columnAliases  []string
+	lateral       bool
+	only          bool
+	from          FromExp
+	alias         string
+	columnAliases []string
 }
 
 var ErrFromItemLateralAndOnly = errors.New("from item: cannot specify both LATERAL and ONLY")
