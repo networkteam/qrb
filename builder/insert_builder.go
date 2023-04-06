@@ -19,14 +19,20 @@ func InsertInto(tableName string) InsertBuilder {
 }
 
 type InsertBuilder struct {
-	withQueries    withQueries
-	tableName      string
-	alias          string
-	columnNames    []string
-	defaultValues  bool
-	valueLists     [][]Exp
-	query          SelectExp
-	returningItems returningItems
+	withQueries                      withQueries
+	tableName                        string
+	alias                            string
+	columnNames                      []string
+	defaultValues                    bool
+	valueLists                       [][]Exp
+	query                            SelectExp
+	conflictTargets                  []conflictTarget
+	conflictTargetWhereConjunction   []Exp
+	conflictConstraintName           string
+	conflictAction                   string
+	conflictDoUpdateSetItems         []updateSetItem
+	conflictDoUpdateWhereConjunction []Exp
+	returningItems                   returningItems
 }
 
 func (b InsertBuilder) As(alias string) InsertBuilder {
@@ -87,6 +93,98 @@ func (b InsertBuilder) Query(query SelectExp) InsertBuilder {
 	newBuilder := b
 	newBuilder.query = query
 	return newBuilder
+}
+
+// OnConflict sets the ON CONFLICT clause with a conflict target expression to the insert.
+// Multiple conflict targets or none can be specified (e.g. for index column names).
+// Specify no conflict target for later addition of ON CONSTRAINT or ON CONFLICT DO NOTHING.
+func (b InsertBuilder) OnConflict(conflictTargets ...Exp) OnConflictInsertBuilder {
+	newBuilder := b
+
+	cloneSlice(&newBuilder.conflictTargets, b.conflictTargets, len(conflictTargets))
+
+	for _, target := range conflictTargets {
+		newBuilder.conflictTargets = append(newBuilder.conflictTargets, conflictTarget{
+			exp: target,
+		})
+	}
+
+	return OnConflictInsertBuilder{
+		builder: newBuilder,
+	}
+}
+
+type OnConflictInsertBuilder struct {
+	builder InsertBuilder
+}
+
+func (b OnConflictInsertBuilder) OnConstraint(constraintName string) OnConflictInsertBuilder {
+	newBuilder := b.builder
+
+	newBuilder.conflictConstraintName = constraintName
+
+	return OnConflictInsertBuilder{newBuilder}
+
+}
+
+func (b OnConflictInsertBuilder) DoUpdate() OnConflictDoUpdateInsertBuilder {
+	newBuilder := b.builder
+
+	newBuilder.conflictAction = "DO UPDATE"
+
+	return OnConflictDoUpdateInsertBuilder{newBuilder}
+}
+
+func (b OnConflictInsertBuilder) DoNothing() InsertBuilder {
+	newBuilder := b.builder
+
+	newBuilder.conflictAction = "DO NOTHING"
+
+	return newBuilder
+}
+
+// Where adds a WHERE condition as the index predicate to the conflict target.
+// Multiple calls to Where are joined with AND.
+func (b OnConflictInsertBuilder) Where(cond Exp) OnConflictInsertBuilder {
+	newBuilder := b.builder
+	cloneSlice(&newBuilder.conflictTargetWhereConjunction, b.builder.conflictTargetWhereConjunction, 1)
+
+	newBuilder.conflictTargetWhereConjunction = append(newBuilder.conflictTargetWhereConjunction, cond)
+
+	return OnConflictInsertBuilder{
+		builder: newBuilder,
+	}
+}
+
+type OnConflictDoUpdateInsertBuilder struct {
+	InsertBuilder
+}
+
+// Set adds a SET column = value to the DO UPDATE conflict action.
+func (b OnConflictDoUpdateInsertBuilder) Set(columnName string, value Exp) OnConflictDoUpdateInsertBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.conflictDoUpdateSetItems, b.conflictDoUpdateSetItems, 1)
+
+	newBuilder.conflictDoUpdateSetItems = append(newBuilder.conflictDoUpdateSetItems, updateSetItem{
+		columnName: columnName,
+		value:      value,
+	})
+	return newBuilder
+}
+
+// Where adds a WHERE condition to the DO UPDATE conflict action.
+// Multiple calls to Where are joined with AND.
+func (b OnConflictDoUpdateInsertBuilder) Where(cond Exp) OnConflictDoUpdateInsertBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.conflictDoUpdateWhereConjunction, b.conflictDoUpdateWhereConjunction, 1)
+
+	newBuilder.conflictDoUpdateWhereConjunction = append(newBuilder.conflictDoUpdateWhereConjunction, cond)
+
+	return newBuilder
+}
+
+type conflictTarget struct {
+	exp Exp
 }
 
 func (b InsertBuilder) Returning(outputExpression Exp) ReturningInsertBuilder {
@@ -151,6 +249,8 @@ func (b InsertBuilder) WriteSQL(sb *SQLBuilder) {
 	sb.WriteRune(')')
 }
 
+var ErrInsertConflictConstraintAndTarget = errors.New("insert: cannot set both conflict constraint name and targets")
+
 func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 	if len(b.withQueries) > 0 {
 		b.withQueries.WriteSQL(sb)
@@ -197,6 +297,52 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 	} else if b.defaultValues {
 		sb.WriteString(" DEFAULT VALUES")
 	}
+
+	if b.conflictAction != "" {
+		sb.WriteString(" ON CONFLICT")
+		if b.conflictConstraintName != "" && len(b.conflictTargets) > 0 {
+			sb.AddError(ErrInsertConflictConstraintAndTarget)
+			return
+		}
+		if b.conflictConstraintName != "" {
+			sb.WriteString(" ON CONSTRAINT ")
+			sb.WriteString(b.conflictConstraintName)
+		}
+		if len(b.conflictTargets) > 0 {
+			sb.WriteString(" (")
+			for i, target := range b.conflictTargets {
+				if i > 0 {
+					sb.WriteString(",")
+				}
+				target.exp.WriteSQL(sb)
+			}
+			sb.WriteString(")")
+		}
+		if len(b.conflictTargetWhereConjunction) > 0 {
+			sb.WriteString(" WHERE ")
+			And(b.conflictTargetWhereConjunction...).WriteSQL(sb)
+		}
+		sb.WriteString(" ")
+		sb.WriteString(b.conflictAction)
+		if b.conflictAction == "DO UPDATE" {
+			if len(b.conflictDoUpdateSetItems) > 0 {
+				sb.WriteString(" SET ")
+				for i, item := range b.conflictDoUpdateSetItems {
+					if i > 0 {
+						sb.WriteString(",")
+					}
+					sb.WriteString(item.columnName)
+					sb.WriteString(" = ")
+					item.value.WriteSQL(sb)
+				}
+			}
+			if len(b.conflictDoUpdateWhereConjunction) > 0 {
+				sb.WriteString(" WHERE ")
+				And(b.conflictDoUpdateWhereConjunction...).WriteSQL(sb)
+			}
+		}
+	}
+
 	if len(b.returningItems) > 0 {
 		b.returningItems.WriteSQL(sb)
 	}

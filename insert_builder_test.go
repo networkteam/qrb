@@ -206,6 +206,92 @@ func TestInsertBuilder(t *testing.T) {
 				q,
 			)
 		})
+
+		t.Run("example 10", func(t *testing.T) {
+			q := qrb.InsertInto("distributors").ColumnNames("did", "dname").
+				Values(qrb.Int(5), qrb.String("Gizmo Transglobal")).
+				Values(qrb.Int(6), qrb.String("Associated Computing,Inc")).
+				OnConflict(qrb.N("did")).DoUpdate().Set("dname", qrb.N("EXCLUDED.dname"))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				`
+				INSERT INTO distributors (did, dname)
+				VALUES (5, 'Gizmo Transglobal'), (6, 'Associated Computing,Inc')
+				ON CONFLICT (did) DO UPDATE SET dname = EXCLUDED.dname
+				`,
+				nil,
+				q,
+			)
+		})
+
+		t.Run("example 11", func(t *testing.T) {
+			q := qrb.InsertInto("distributors").ColumnNames("did", "dname").
+				Values(qrb.Int(7), qrb.String("Redline GmbH")).
+				OnConflict(qrb.N("did")).DoNothing()
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				`
+				INSERT INTO distributors (did, dname) VALUES (7, 'Redline GmbH')
+    			ON CONFLICT (did) DO NOTHING
+				`,
+				nil,
+				q,
+			)
+		})
+
+		t.Run("example 12a", func(t *testing.T) {
+			q := qrb.InsertInto("distributors").As("d").ColumnNames("did", "dname").
+				Values(qrb.Int(8), qrb.String("Anvil Distribution")).
+				OnConflict(qrb.N("did")).DoUpdate().
+				Set("dname", qrb.N("EXCLUDED.dname").Concat(qrb.String(" (formerly ")).Concat(qrb.N("d.dname")).Concat(qrb.String(")"))).
+				Where(qrb.N("d.zipcode").Neq(qrb.String("21201")))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				`
+				INSERT INTO distributors AS d (did, dname) VALUES (8, 'Anvil Distribution')
+				ON CONFLICT (did) DO UPDATE
+				SET dname = EXCLUDED.dname || ' (formerly ' || d.dname || ')'
+				WHERE d.zipcode <> '21201'
+				`,
+				nil,
+				q,
+			)
+		})
+
+		t.Run("example 12b", func(t *testing.T) {
+			q := qrb.InsertInto("distributors").ColumnNames("did", "dname").
+				Values(qrb.Int(9), qrb.String("Antwerp Design")).
+				OnConflict().OnConstraint("distributors_pkey").DoNothing()
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				`
+				INSERT INTO distributors (did, dname) VALUES (9, 'Antwerp Design')
+    			ON CONFLICT ON CONSTRAINT distributors_pkey DO NOTHING
+				`,
+				nil,
+				q,
+			)
+		})
+
+		t.Run("example 13", func(t *testing.T) {
+			q := qrb.InsertInto("distributors").ColumnNames("did", "dname").
+				Values(qrb.Int(10), qrb.String("Conrad International")).
+				OnConflict(qrb.N("did")).Where(qrb.N("is_active")).DoNothing()
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				`
+				INSERT INTO distributors (did, dname) VALUES (10, 'Conrad International')
+    				ON CONFLICT (did) WHERE is_active DO NOTHING
+				`,
+				nil,
+				q,
+			)
+		})
 	})
 
 	t.Run("set map", func(t *testing.T) {

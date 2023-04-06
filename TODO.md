@@ -6,7 +6,8 @@
       * [ ] Support `OVERRIDING { SYSTEM | USER } VALUE` clause
       * [x] Support `DEFAULT VALUES`
       * [x] Support `.Query` to add a `SELECT` statement
-      * [ ] Support `ON CONFLICT` clause
+      * [x] Support `ON CONFLICT` clause
+          * [ ] Suppport `SetColumnList` to set column names from expressions or a sub-select
       * [x] Support `RETURNING` clause
     * [x] Add `Update` statement
       * [x] Support `WITH` queries
