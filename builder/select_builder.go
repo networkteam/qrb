@@ -18,7 +18,7 @@ func (b SelectBuilder) isFromLateralExp()      {}
 func (b SelectBuilder) isSelect()              {}
 func (b SelectBuilder) isWithQuery()           {}
 func (b SelectBuilder) isSelectOrExpressions() {}
-func (b SelectBuilder) noParensExp()           {}
+func (b SelectBuilder) NoParensExp()           {}
 
 type SelectExp interface {
 	Exp

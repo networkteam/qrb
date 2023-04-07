@@ -9,7 +9,7 @@ func String(s string) Exp {
 type expStr string
 
 func (e expStr) IsExp()       {}
-func (e expStr) noParensExp() {}
+func (e expStr) NoParensExp() {}
 
 func (e expStr) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(pqQuoteLiteral(string(e)))
@@ -22,7 +22,7 @@ func Float(f float64) Exp {
 type expFloat float64
 
 func (e expFloat) IsExp()       {}
-func (e expFloat) noParensExp() {}
+func (e expFloat) NoParensExp() {}
 
 func (e expFloat) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(strconv.FormatFloat(float64(e), 'f', -1, 64))
@@ -35,7 +35,7 @@ func Int(s int) Exp {
 type expInt int
 
 func (e expInt) IsExp()       {}
-func (e expInt) noParensExp() {}
+func (e expInt) NoParensExp() {}
 
 func (e expInt) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(strconv.Itoa(int(e)))
@@ -48,7 +48,7 @@ func Bool(b bool) Exp {
 type expBool bool
 
 func (e expBool) IsExp()       {}
-func (e expBool) noParensExp() {}
+func (e expBool) NoParensExp() {}
 
 func (e expBool) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(strconv.FormatBool(bool(e)))
@@ -64,7 +64,7 @@ func Array(elems ...Exp) Exp {
 type expArray []Exp
 
 func (e expArray) IsExp()       {}
-func (e expArray) noParensExp() {}
+func (e expArray) NoParensExp() {}
 
 func (e expArray) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("ARRAY[")
@@ -85,7 +85,7 @@ func Null() Exp {
 type expNull struct{}
 
 func (e expNull) IsExp()       {}
-func (e expNull) noParensExp() {}
+func (e expNull) NoParensExp() {}
 
 func (e expNull) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("NULL")
@@ -99,7 +99,7 @@ func Default() Exp {
 type expDefault struct{}
 
 func (e expDefault) IsExp()       {}
-func (e expDefault) noParensExp() {}
+func (e expDefault) NoParensExp() {}
 
 func (e expDefault) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("DEFAULT")

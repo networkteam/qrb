@@ -257,3 +257,21 @@ func (c existsExp) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("EXISTS ")
 	c.subquery.WriteSQL(sb)
 }
+
+// --- Regexp
+
+func (b ExpBase) RegexpMatch(pattern Exp) Exp {
+	return b.Op(opRegexpMatch, pattern)
+}
+
+func (b ExpBase) RegexpIMatch(pattern Exp) Exp {
+	return b.Op(opRegexpIMatch, pattern)
+}
+
+func (b ExpBase) RegexpNotMatch(pattern Exp) Exp {
+	return b.Op(opRegexpNotMatch, pattern)
+}
+
+func (b ExpBase) RegexpINotMatch(pattern Exp) Exp {
+	return b.Op(opRegexpINotMatch, pattern)
+}
