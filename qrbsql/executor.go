@@ -59,6 +59,16 @@ func (b *ExecutorBuilder) Build(builder builder.SQLWriter) *ExecutiveQueryBuilde
 	}
 }
 
+func (b *ExecutiveQueryBuilder) WithNamedArgs(args map[string]any) *ExecutiveQueryBuilder {
+	b.QueryBuilder.WithNamedArgs(args)
+	return b
+}
+
+func (b *ExecutiveQueryBuilder) WithoutValidation() *ExecutiveQueryBuilder {
+	b.QueryBuilder.WithoutValidation()
+	return b
+}
+
 func (b *ExecutiveQueryBuilder) Query(ctx context.Context) (rows *sql.Rows, err error) {
 	sql, args, err := b.ToSQL()
 	if err != nil {

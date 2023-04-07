@@ -69,10 +69,10 @@ func (b ExpBase) JsonExtractPathText(rgt Exp) ExpBase {
 	return b.Op(opExtractPathText, rgt)
 }
 
-func (b ExpBase) JsonContains(rgt Exp) ExpBase {
+func (b ExpBase) Contains(rgt Exp) ExpBase {
 	return b.Op(opContains, rgt)
 }
 
-func (b ExpBase) JsonContainedBy(rgt Exp) ExpBase {
+func (b ExpBase) ContainedBy(rgt Exp) ExpBase {
 	return b.Op(opContainedBy, rgt)
 }
