@@ -1,102 +1,77 @@
 package main
 
 import (
-	"context"
 	"database/sql"
-	"log"
+	"fmt"
 	"os"
-	"time"
+	"strings"
 
 	_ "github.com/lib/pq"
-
-	"github.com/networkteam/qrb"
-	"github.com/networkteam/qrb/qrbsql"
+	"github.com/urfave/cli/v2"
 )
 
-var (
-	Track              = qrb.N(`"Track"`)
-	Track_AlbumId      = qrb.N(`"Track"."AlbumId"`)
-	Track_Milliseconds = qrb.N(`"Track"."Milliseconds"`)
-
-	Album       = qrb.N(`"Album"`)
-	Album_Title = qrb.N(`"Album"."Title"`)
-	Artist      = qrb.N(`"Artist"`)
-	Artist_Name = qrb.N(`"Artist"."Name"`)
-)
-
-// E.g. run via `DATABASE_URL="dbname=chinook sslmode=disable" go run ./examples/libpq`
 func main() {
-	ctx := context.Background()
+	var db *sql.DB
 
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
-	if err != nil {
-		panic(err)
+	app := cli.NewApp()
+	app.Name = "example-libpq"
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "database-url",
+			Usage:   "Database URL",
+			EnvVars: []string{"DATABASE_URL"},
+			Value:   "dbname=qrb-examples sslmode=disable",
+		},
+	}
+	app.Before = func(c *cli.Context) error {
+		var err error
+		db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+		return err
+	}
+	app.Commands = []*cli.Command{
+		{
+			Name: "books",
+			Subcommands: []*cli.Command{
+				{
+					Name: "list",
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name:  "genre",
+							Usage: "Filter by genre",
+						},
+						&cli.StringFlag{
+							Name:  "author",
+							Usage: "Filter by author",
+						},
+					},
+					Action: func(c *cli.Context) error {
+						books, err := findAllBooks(c.Context, db, booksFilter{
+							GenreName:  c.String("genre"),
+							AuthorName: c.String("author"),
+						})
+						if err != nil {
+							return err
+						}
+
+						for _, book := range books {
+							fmt.Printf(
+								"%s by %s (%d) [%s]\n",
+								book.Title,
+								book.AuthorName,
+								book.PublicationYear,
+								strings.Join(book.Genres, ", "),
+							)
+						}
+
+						return nil
+					},
+				},
+			},
+		},
 	}
 
-	// TODO The naming is horrible with uppercased letters in the schema!
-
-	q := qrb.With("longest_track").As(
-		qrb.Select(Track_AlbumId, Track_Milliseconds).
-			From(Track).
-			OrderBy(Track_Milliseconds).Desc().
-			Limit(qrb.Int(1)),
-	).
-		Select(Album_Title).As("album_title").
-		Select(Artist_Name).As("artist_name").
-		Select(qrb.N(`"Milliseconds"`)).As("length").
-		From(Album).
-		Join(qrb.N(`"longest_track"`)).Using(`"AlbumId"`).
-		Join(Artist).Using(`"ArtistId"`)
-
-	{
-		row, err := qrbsql.
-			Build(q).
-			WithExecutor(db).
-			QueryRow(ctx)
-
-		var (
-			albumTitle string
-			artistName string
-			length     int64
-		)
-		err = row.Scan(&albumTitle, &artistName, &length)
-		if err != nil {
-			log.Fatalf("Error scanning row: %v", err)
-		}
-
-		log.Printf("(conn) Album title: %s, Artist name: %s, Longest track: %s\n", albumTitle, artistName, time.Duration(length)*time.Millisecond)
+	if err := app.Run(os.Args); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-
-	(func() {
-		tx, err := db.BeginTx(ctx, &sql.TxOptions{
-			Isolation: sql.LevelReadCommitted,
-		})
-		if err != nil {
-			log.Fatalf("Error starting transaction: %v", err)
-		}
-		defer func(tx *sql.Tx) {
-			err := tx.Commit()
-			if err != nil {
-				log.Fatalf("Error committing transaction: %v", err)
-			}
-		}(tx)
-
-		ex := qrbsql.NewExecutorBuilder(tx)
-
-		row, err := ex.
-			Build(q).
-			QueryRow(ctx)
-
-		var (
-			albumTitle string
-			artistName string
-			length     int64
-		)
-		err = row.Scan(&albumTitle, &artistName, &length)
-		if err != nil {
-			log.Fatalf("Error scanning row: %v", err)
-		}
-
-		log.Printf("(tx) Album title: %s, Artist name: %s, Longest track: %s\n", albumTitle, artistName, time.Duration(length)*time.Millisecond)
-	})()
 }

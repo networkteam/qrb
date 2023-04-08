@@ -25,6 +25,7 @@
     * [ ] Support locking clauses
     * [ ] Support window functions
 * Expression:
+  * [ ] Make sure `ExpBase` is returned / embedded by literals to enable building of expressions
   * Implement more functions and operators from https://www.postgresql.org/docs/15/functions.html
     * [x] IN with subquery
     * [ ] IN with scalar expressions
