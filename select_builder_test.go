@@ -714,6 +714,27 @@ func TestSelectBuilder_From(t *testing.T) {
 			q,
 		)
 	})
+
+	t.Run("use embedded IdentExp", func(t *testing.T) {
+		var films = struct {
+			builder.Identer
+		}{
+			Identer: qrb.N("films"),
+		}
+
+		q := qrb.
+			Select(qrb.N("*")).
+			From(films)
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT * FROM films
+			`,
+			nil,
+			q,
+		)
+	})
 }
 
 func TestSelectBuilder_LeftJoin(t *testing.T) {

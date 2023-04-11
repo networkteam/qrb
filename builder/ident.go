@@ -33,6 +33,7 @@ func (i IdentExp) Ident() string {
 type Identer interface {
 	Exp
 	Ident() string
+	isFromExp()
 }
 
 var ErrInvalidIdentifier = errors.New("identifier: invalid")
