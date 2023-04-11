@@ -26,6 +26,10 @@ func (i IdentExp) IsExp()       {}
 func (i IdentExp) isFromExp()   {}
 func (i IdentExp) NoParensExp() {}
 
+func (i IdentExp) Ident() string {
+	return i.ident
+}
+
 var ErrInvalidIdentifier = errors.New("identifier: invalid")
 
 func (i IdentExp) WriteSQL(sb *SQLBuilder) {

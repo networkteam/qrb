@@ -38,6 +38,7 @@ func TestN(t *testing.T) {
 			sql, _, err := qrb.Build(q).ToSQL()
 			require.NoError(t, err)
 			assert.Equal(t, strings.TrimSpace(id), sql)
+			assert.Equal(t, strings.TrimSpace(id), q.Ident())
 		})
 	}
 
