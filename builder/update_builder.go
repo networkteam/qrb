@@ -12,7 +12,7 @@ import "sort"
 //     [ WHERE condition | WHERE CURRENT OF cursor_name ]
 //     [ RETURNING * | output_expression [ [ AS ] output_name ] [, ...] ]
 
-func Update(tableName IdentExp) UpdateBuilder {
+func Update(tableName Identer) UpdateBuilder {
 	return UpdateBuilder{
 		tableName: tableName,
 	}
@@ -20,7 +20,7 @@ func Update(tableName IdentExp) UpdateBuilder {
 
 type UpdateBuilder struct {
 	withQueries      withQueries
-	tableName        IdentExp
+	tableName        Identer
 	alias            string
 	setItems         []updateSetItem
 	from             []fromItem

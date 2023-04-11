@@ -30,6 +30,11 @@ func (i IdentExp) Ident() string {
 	return i.ident
 }
 
+type Identer interface {
+	Exp
+	Ident() string
+}
+
 var ErrInvalidIdentifier = errors.New("identifier: invalid")
 
 func (i IdentExp) WriteSQL(sb *SQLBuilder) {

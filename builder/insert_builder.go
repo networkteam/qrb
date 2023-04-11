@@ -12,7 +12,7 @@ import (
 //     [ ON CONFLICT [ conflict_target ] conflict_action ]
 //     [ RETURNING * | output_expression [ [ AS ] output_name ] [, ...] ]
 
-func InsertInto(tableName IdentExp) InsertBuilder {
+func InsertInto(tableName Identer) InsertBuilder {
 	return InsertBuilder{
 		tableName: tableName,
 	}
@@ -20,7 +20,7 @@ func InsertInto(tableName IdentExp) InsertBuilder {
 
 type InsertBuilder struct {
 	withQueries                      withQueries
-	tableName                        IdentExp
+	tableName                        Identer
 	alias                            string
 	columnNames                      []string
 	defaultValues                    bool

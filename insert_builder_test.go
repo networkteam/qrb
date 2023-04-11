@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/networkteam/qrb"
+	"github.com/networkteam/qrb/builder"
 	"github.com/networkteam/qrb/internal/testhelper"
 )
 
@@ -329,6 +330,26 @@ func TestInsertBuilder(t *testing.T) {
 				($1, $2, $3, $4, $5, $6)
 			`,
 			[]any{"UA502", "1971-07-13", 105, "Comedy", "82 minutes", "Bananas"},
+			q,
+		)
+	})
+
+	t.Run("use embedded IdentExp", func(t *testing.T) {
+		var films = struct {
+			builder.IdentExp
+		}{
+			IdentExp: qrb.N("films"),
+		}
+
+		q := qrb.
+			InsertInto(films).
+			DefaultValues()
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			INSERT INTO films DEFAULT VALUES`,
+			nil,
 			q,
 		)
 	})
