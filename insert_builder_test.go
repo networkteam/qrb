@@ -13,7 +13,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 1", func(t *testing.T) {
 			q := qrb.
-				InsertInto("films").
+				InsertInto(qrb.N("films")).
 				Values(qrb.String("UA502"), qrb.String("Bananas"), qrb.Int(105), qrb.String("1971-07-13"), qrb.String("Comedy"), qrb.String("82 minutes"))
 
 			testhelper.AssertSQLWriterEquals(
@@ -29,7 +29,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 2", func(t *testing.T) {
 			q := qrb.
-				InsertInto("films").
+				InsertInto(qrb.N("films")).
 				ColumnNames("code", "title", "did", "date_prod", "kind").
 				Values(qrb.String("T_601"), qrb.String("Yojimbo"), qrb.Int(106), qrb.String("1961-06-16"), qrb.String("Drama"))
 
@@ -46,7 +46,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 3a", func(t *testing.T) {
 			q := qrb.
-				InsertInto("films").
+				InsertInto(qrb.N("films")).
 				Values(qrb.String("UA502"), qrb.String("Bananas"), qrb.Int(105), qrb.Default(), qrb.String("Comedy"), qrb.String("82 minutes"))
 
 			testhelper.AssertSQLWriterEquals(
@@ -62,7 +62,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 3b", func(t *testing.T) {
 			q := qrb.
-				InsertInto("films").
+				InsertInto(qrb.N("films")).
 				ColumnNames("code", "title", "did", "date_prod", "kind").
 				Values(qrb.String("T_601"), qrb.String("Yojimbo"), qrb.Int(106), qrb.Default(), qrb.String("Drama"))
 
@@ -79,7 +79,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 4", func(t *testing.T) {
 			q := qrb.
-				InsertInto("films").
+				InsertInto(qrb.N("films")).
 				DefaultValues()
 
 			testhelper.AssertSQLWriterEquals(
@@ -94,7 +94,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 5", func(t *testing.T) {
 			q := qrb.
-				InsertInto("films").
+				InsertInto(qrb.N("films")).
 				ColumnNames("code", "title", "did", "date_prod", "kind").
 				Values(qrb.String("B6717"), qrb.String("Tampopo"), qrb.Int(110), qrb.String("1985-02-10"), qrb.String("Comedy")).
 				Values(qrb.String("HG120"), qrb.String("The Dinner Game"), qrb.Int(140), qrb.Default(), qrb.String("Comedy"))
@@ -113,7 +113,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 6", func(t *testing.T) {
 			q := qrb.
-				InsertInto("films").
+				InsertInto(qrb.N("films")).
 				Query(qrb.Select(qrb.N("*")).From(qrb.N("tmp_films")).Where(qrb.N("date_prod").Lt(qrb.String("2004-05-07"))))
 
 			testhelper.AssertSQLWriterEquals(
@@ -128,7 +128,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 7a", func(t *testing.T) {
 			q := qrb.
-				InsertInto("tictactoe").
+				InsertInto(qrb.N("tictactoe")).
 				ColumnNames("game", "board[1:3][1:3]").
 				Values(qrb.Int(1), qrb.String(`{{" "," "," "},{" "," "," "},{" "," "," "}}`))
 
@@ -145,7 +145,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 7b", func(t *testing.T) {
 			q := qrb.
-				InsertInto("tictactoe").
+				InsertInto(qrb.N("tictactoe")).
 				ColumnNames("game", "board").
 				Values(qrb.Int(2), qrb.String(`{{X," "," "},{" ",O," "},{" ",X," "}}`))
 
@@ -162,7 +162,7 @@ func TestInsertBuilder(t *testing.T) {
 
 		t.Run("example 8", func(t *testing.T) {
 			q := qrb.
-				InsertInto("distributors").
+				InsertInto(qrb.N("distributors")).
 				ColumnNames("did", "dname").
 				Values(qrb.Default(), qrb.String("XYZ Widgets")).
 				Returning(qrb.N("did"))
@@ -181,14 +181,14 @@ func TestInsertBuilder(t *testing.T) {
 		t.Run("example 9", func(t *testing.T) {
 			q := qrb.
 				With("upd").As(
-				qrb.Update("employees").
+				qrb.Update(qrb.N("employees")).
 					Set("sales_count", qrb.N("sales_count").Plus(qrb.Int(1))).
 					Where(qrb.N("id").Eq(
 						qrb.Select(qrb.N("sales_person")).From(qrb.N("accounts")).Where(qrb.N("name").Eq(qrb.String("Acme Corporation"))),
 					)).
 					Returning(qrb.N("*")),
 			).
-				InsertInto("employees_log").
+				InsertInto(qrb.N("employees_log")).
 				Query(qrb.Select(qrb.N("*"), qrb.N("current_timestamp")).From(qrb.N("upd")))
 
 			testhelper.AssertSQLWriterEquals(
@@ -207,7 +207,7 @@ func TestInsertBuilder(t *testing.T) {
 		})
 
 		t.Run("example 10", func(t *testing.T) {
-			q := qrb.InsertInto("distributors").ColumnNames("did", "dname").
+			q := qrb.InsertInto(qrb.N("distributors")).ColumnNames("did", "dname").
 				Values(qrb.Int(5), qrb.String("Gizmo Transglobal")).
 				Values(qrb.Int(6), qrb.String("Associated Computing,Inc")).
 				OnConflict(qrb.N("did")).DoUpdate().Set("dname", qrb.N("EXCLUDED.dname"))
@@ -225,7 +225,7 @@ func TestInsertBuilder(t *testing.T) {
 		})
 
 		t.Run("example 11", func(t *testing.T) {
-			q := qrb.InsertInto("distributors").ColumnNames("did", "dname").
+			q := qrb.InsertInto(qrb.N("distributors")).ColumnNames("did", "dname").
 				Values(qrb.Int(7), qrb.String("Redline GmbH")).
 				OnConflict(qrb.N("did")).DoNothing()
 
@@ -241,7 +241,7 @@ func TestInsertBuilder(t *testing.T) {
 		})
 
 		t.Run("example 12a", func(t *testing.T) {
-			q := qrb.InsertInto("distributors").As("d").ColumnNames("did", "dname").
+			q := qrb.InsertInto(qrb.N("distributors")).As("d").ColumnNames("did", "dname").
 				Values(qrb.Int(8), qrb.String("Anvil Distribution")).
 				OnConflict(qrb.N("did")).DoUpdate().
 				Set("dname", qrb.N("EXCLUDED.dname").Concat(qrb.String(" (formerly ")).Concat(qrb.N("d.dname")).Concat(qrb.String(")"))).
@@ -261,7 +261,7 @@ func TestInsertBuilder(t *testing.T) {
 		})
 
 		t.Run("example 12b", func(t *testing.T) {
-			q := qrb.InsertInto("distributors").ColumnNames("did", "dname").
+			q := qrb.InsertInto(qrb.N("distributors")).ColumnNames("did", "dname").
 				Values(qrb.Int(9), qrb.String("Antwerp Design")).
 				OnConflict().OnConstraint("distributors_pkey").DoNothing()
 
@@ -277,7 +277,7 @@ func TestInsertBuilder(t *testing.T) {
 		})
 
 		t.Run("example 13", func(t *testing.T) {
-			q := qrb.InsertInto("distributors").ColumnNames("did", "dname").
+			q := qrb.InsertInto(qrb.N("distributors")).ColumnNames("did", "dname").
 				Values(qrb.Int(10), qrb.String("Conrad International")).
 				OnConflict(qrb.N("did")).Where(qrb.N("is_active")).DoNothing()
 
@@ -295,7 +295,7 @@ func TestInsertBuilder(t *testing.T) {
 
 	t.Run("set map", func(t *testing.T) {
 		q := qrb.
-			InsertInto("films").
+			InsertInto(qrb.N("films")).
 			SetMap(map[string]any{
 				"code":      "UA502",
 				"title":     "Bananas",
@@ -318,7 +318,7 @@ func TestInsertBuilder(t *testing.T) {
 
 	t.Run("values with args", func(t *testing.T) {
 		q := qrb.
-			InsertInto("films").
+			InsertInto(qrb.N("films")).
 			ColumnNames("code", "date_prod", "did", "kind", "length", "title").
 			Values(qrb.Args("UA502", "1971-07-13", 105, "Comedy", "82 minutes", "Bananas")...)
 

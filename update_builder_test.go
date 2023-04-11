@@ -13,7 +13,7 @@ func TestUpdateBuilder(t *testing.T) {
 
 		t.Run("example 1", func(t *testing.T) {
 			q := qrb.
-				Update("films").
+				Update(qrb.N("films")).
 				Set("kind", qrb.String("Dramatic")).
 				Where(qrb.N("kind").Eq(qrb.String("Drama")))
 
@@ -29,7 +29,7 @@ func TestUpdateBuilder(t *testing.T) {
 
 		t.Run("example 2", func(t *testing.T) {
 			q := qrb.
-				Update("weather").
+				Update(qrb.N("weather")).
 				Set("temp_lo", qrb.N("temp_lo").Plus(qrb.Int(1))).
 				Set("temp_hi", qrb.N("temp_lo").Plus(qrb.Int(15))).
 				Set("prcp", qrb.Default()).
@@ -51,7 +51,7 @@ func TestUpdateBuilder(t *testing.T) {
 
 		t.Run("example 2", func(t *testing.T) {
 			q := qrb.
-				Update("weather").
+				Update(qrb.N("weather")).
 				Set("temp_lo", qrb.N("temp_lo").Plus(qrb.Int(1))).
 				Set("temp_hi", qrb.N("temp_lo").Plus(qrb.Int(15))).
 				Set("prcp", qrb.Default()).
@@ -89,7 +89,7 @@ func TestUpdateBuilder(t *testing.T) {
 					qrb.N("l.name").IsNotNull(),
 					qrb.N("l.name").Neq(qrb.String("")),
 				)),
-		).Update("journey_patterns").As("jp").
+		).Update(qrb.N("journey_patterns")).As("jp").
 			Set("name", qrb.N("ljp.line_name").Concat(qrb.String(" - ")).Concat(qrb.N("jp.name"))).
 			From(qrb.N("line_journey_pattern")).As("ljp").
 			Where(qrb.N("ljp.journey_pattern_id").Eq(qrb.N("jp.id")))
@@ -117,7 +117,7 @@ func TestUpdateBuilder(t *testing.T) {
 
 	t.Run("set map", func(t *testing.T) {
 		q := qrb.
-			Update("films").
+			Update(qrb.N("films")).
 			SetMap(map[string]any{
 				"code": "UA502",
 				"kind": "Comedy",

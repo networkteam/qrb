@@ -156,14 +156,14 @@ func Exists(subquery builder.SelectExp) builder.Exp {
 
 // --- Commands
 
-func InsertInto(tableName string) builder.InsertBuilder {
+func InsertInto(tableName builder.IdentExp) builder.InsertBuilder {
 	return builder.InsertInto(tableName)
 }
 
-func Update(tableName string) builder.UpdateBuilder {
+func Update(tableName builder.IdentExp) builder.UpdateBuilder {
 	return builder.Update(tableName)
 }
 
-func DeleteFrom(tableName string) builder.DeleteBuilder {
+func DeleteFrom(tableName builder.IdentExp) builder.DeleteBuilder {
 	return builder.DeleteFrom(tableName)
 }

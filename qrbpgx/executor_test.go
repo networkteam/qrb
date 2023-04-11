@@ -46,7 +46,7 @@ func TestExecutiveQueryBuilder(t *testing.T) {
 	assert.Equal(t, 1, id)
 	assert.Equal(t, "Alice", name)
 
-	eqb = qrbpgx.Build(qrb.InsertInto("users").Values(qrb.Default(), qrb.Arg("Robert"))).WithExecutor(mock)
+	eqb = qrbpgx.Build(qrb.InsertInto(qrb.N("users")).Values(qrb.Default(), qrb.Arg("Robert"))).WithExecutor(mock)
 
 	mock.ExpectExec("INSERT INTO users VALUES (DEFAULT,$1)").WithArgs("Robert").WillReturnResult(pgxmock.NewResult("INSERT", 1))
 

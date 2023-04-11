@@ -6,7 +6,7 @@ package builder
 //     [ WHERE condition | WHERE CURRENT OF cursor_name ]
 //     [ RETURNING * | output_expression [ [ AS ] output_name ] [, ...] ]
 
-func DeleteFrom(tableName string) DeleteBuilder {
+func DeleteFrom(tableName IdentExp) DeleteBuilder {
 	return DeleteBuilder{
 		tableName: tableName,
 	}
@@ -14,7 +14,7 @@ func DeleteFrom(tableName string) DeleteBuilder {
 
 type DeleteBuilder struct {
 	withQueries      withQueries
-	tableName        string
+	tableName        IdentExp
 	alias            string
 	using            []fromItem
 	whereConjunction []Exp
@@ -109,7 +109,7 @@ func (b DeleteBuilder) WriteSQL(sb *SQLBuilder) {
 	}
 
 	sb.WriteString("DELETE FROM ")
-	sb.WriteString(b.tableName)
+	b.tableName.WriteSQL(sb)
 	if b.alias != "" {
 		sb.WriteString(" AS ")
 		sb.WriteString(b.alias)

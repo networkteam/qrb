@@ -14,7 +14,7 @@ func TestDeleteBuilder(t *testing.T) {
 
 		t.Run("example 0.1", func(t *testing.T) {
 			q := qrb.
-				DeleteFrom("films").
+				DeleteFrom(qrb.N("films")).
 				Using(qrb.N("producers")).
 				Where(qrb.And(
 					qrb.N("producer_id").Eq(qrb.N("producers.id")),
@@ -34,7 +34,7 @@ func TestDeleteBuilder(t *testing.T) {
 
 		t.Run("example 0.2", func(t *testing.T) {
 			q := qrb.
-				DeleteFrom("films").
+				DeleteFrom(qrb.N("films")).
 				Where(qrb.N("producer_id").In(
 					qrb.Select(qrb.N("id")).From(qrb.N("producers")).Where(qrb.N("name").Eq(qrb.String("foo"))),
 				))
@@ -54,7 +54,7 @@ func TestDeleteBuilder(t *testing.T) {
 
 		t.Run("example 1.1", func(t *testing.T) {
 			q := qrb.
-				DeleteFrom("films").
+				DeleteFrom(qrb.N("films")).
 				Where(qrb.N("kind").Neq(qrb.String("Musical")))
 
 			testhelper.AssertSQLWriterEquals(
@@ -69,7 +69,7 @@ func TestDeleteBuilder(t *testing.T) {
 
 		t.Run("example 1.2", func(t *testing.T) {
 			q := qrb.
-				DeleteFrom("films")
+				DeleteFrom(qrb.N("films"))
 
 			testhelper.AssertSQLWriterEquals(
 				t,
@@ -83,7 +83,7 @@ func TestDeleteBuilder(t *testing.T) {
 
 		t.Run("example 1.3", func(t *testing.T) {
 			q := qrb.
-				DeleteFrom("tasks").
+				DeleteFrom(qrb.N("tasks")).
 				Where(qrb.N("status").Eq(qrb.String("DONE"))).
 				Returning(qrb.N("*"))
 
@@ -105,7 +105,7 @@ func TestDeleteBuilder(t *testing.T) {
 			With("max_table").As(
 			qrb.Select(qrb.N("uid")).Select(fn.Max(qrb.N("ts")).Minus(qrb.Int(10000))).As("mx").From(qrb.N("listens")).GroupBy(qrb.N("uid")),
 		).
-			DeleteFrom("listens").
+			DeleteFrom(qrb.N("listens")).
 			Where(qrb.N("ts").Lt(qrb.Select(qrb.N("mx")).From(qrb.N("max_table")).Where(qrb.N("max_table.uid").Eq(qrb.N("listens.uid")))))
 
 		testhelper.AssertSQLWriterEquals(

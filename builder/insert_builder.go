@@ -12,7 +12,7 @@ import (
 //     [ ON CONFLICT [ conflict_target ] conflict_action ]
 //     [ RETURNING * | output_expression [ [ AS ] output_name ] [, ...] ]
 
-func InsertInto(tableName string) InsertBuilder {
+func InsertInto(tableName IdentExp) InsertBuilder {
 	return InsertBuilder{
 		tableName: tableName,
 	}
@@ -20,7 +20,7 @@ func InsertInto(tableName string) InsertBuilder {
 
 type InsertBuilder struct {
 	withQueries                      withQueries
-	tableName                        string
+	tableName                        IdentExp
 	alias                            string
 	columnNames                      []string
 	defaultValues                    bool
@@ -257,7 +257,7 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 	}
 
 	sb.WriteString("INSERT INTO ")
-	sb.WriteString(b.tableName)
+	b.tableName.WriteSQL(sb)
 	if b.alias != "" {
 		sb.WriteString(" AS ")
 		sb.WriteString(b.alias)
