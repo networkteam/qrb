@@ -316,6 +316,7 @@ const (
 	joinTypeLeft  joinType = "LEFT JOIN"
 	joinTypeRight joinType = "RIGHT JOIN"
 	joinTypeFull  joinType = "FULL JOIN"
+	joinTypeCross joinType = "CROSS JOIN"
 )
 
 type join struct {
@@ -380,8 +381,15 @@ func (b SelectBuilder) FullJoin(from FromExp) JoinSelectBuilder {
 	return b.addJoin(joinTypeFull, from, false)
 }
 
+func (b SelectBuilder) CrossJoin(from FromExp) JoinSelectBuilder {
+	return b.addJoin(joinTypeCross, from, false)
+}
+
+func (b SelectBuilder) CrossJoinLateral(from FromExp) JoinSelectBuilder {
+	return b.addJoin(joinTypeCross, from, true)
+}
+
 // TODO NATURAL
-// TODO CROSS JOIN
 
 func (b SelectBuilder) addJoin(joinType joinType, from FromExp, lateral bool) JoinSelectBuilder {
 	newBuilder := b

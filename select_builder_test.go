@@ -745,6 +745,14 @@ func TestSelectBuilder_LeftJoin(t *testing.T) {
 	testhelper.AssertSQLWriterEquals(t, "SELECT 1 FROM foo LEFT JOIN bar ON foo.id = bar.id LEFT JOIN baz USING (id)", nil, q2)
 }
 
+func TestSelectBuilder_CrossJoin(t *testing.T) {
+	q1 := qrb.Select(qrb.Int(1)).From(qrb.N("foo")).CrossJoin(qrb.N("bar")).On(qrb.N("foo.id").Eq(qrb.N("bar.id")))
+	q2 := q1.CrossJoinLateral(qrb.N("baz")).Using("id")
+
+	testhelper.AssertSQLWriterEquals(t, "SELECT 1 FROM foo CROSS JOIN bar ON foo.id = bar.id", nil, q1)
+	testhelper.AssertSQLWriterEquals(t, "SELECT 1 FROM foo CROSS JOIN bar ON foo.id = bar.id CROSS JOIN LATERAL baz USING (id)", nil, q2)
+}
+
 func TestSelectBuilder_Select(t *testing.T) {
 	t.Run("immutability", func(t *testing.T) {
 		q1 := qrb.Select(qrb.Int(1))
