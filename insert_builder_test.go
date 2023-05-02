@@ -321,7 +321,14 @@ func TestInsertBuilder(t *testing.T) {
 		q := qrb.
 			InsertInto(qrb.N("films")).
 			ColumnNames("code", "date_prod", "did", "kind", "length", "title").
-			Values(qrb.Args("UA502", "1971-07-13", 105, "Comedy", "82 minutes", "Bananas")...)
+			Values(
+				qrb.Arg("UA502"),
+				qrb.Arg("1971-07-13"),
+				qrb.Arg(105),
+				qrb.Arg("Comedy"),
+				qrb.Arg("82 minutes"),
+				qrb.Arg("Bananas"),
+			)
 
 		testhelper.AssertSQLWriterEquals(
 			t,

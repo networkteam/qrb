@@ -22,12 +22,28 @@ func (a argExp) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(p)
 }
 
+type Expressions []Exp
+
+func (e Expressions) IsExp() {}
+
+func (e Expressions) WriteSQL(sb *SQLBuilder) {
+	sb.WriteRune('(')
+	for i, exp := range e {
+		if i > 0 {
+			sb.WriteRune(',')
+		}
+		exp.WriteSQL(sb)
+	}
+	sb.WriteRune(')')
+}
+
+func (e Expressions) isSelectOrExpressions() {}
+
 // Args creates argument expressions for the given arguments.
-func Args(argument any, rest ...any) []Exp {
-	exps := make([]Exp, 1+len(rest))
-	exps[0] = Arg(argument)
-	for i, arg := range rest {
-		exps[i+1] = Arg(arg)
+func Args[T any](arguments ...T) Expressions {
+	exps := make([]Exp, len(arguments))
+	for i, arg := range arguments {
+		exps[i] = Arg(arg)
 	}
 	return exps
 }

@@ -41,3 +41,13 @@ func cloneSlice[T any](dst *[]T, src []T, additionalCapacity int) {
 	*dst = make([]T, len(src), len(src)+additionalCapacity)
 	copy(*dst, src)
 }
+
+func nonNil(exps []Exp) []Exp {
+	result := make([]Exp, 0, len(exps))
+	for _, exp := range exps {
+		if exp != nil {
+			result = append(result, exp)
+		}
+	}
+	return result
+}

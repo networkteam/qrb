@@ -133,16 +133,18 @@ func (u unaryExp) WriteSQL(sb *SQLBuilder) {
 
 // --- Junction expressions
 
+// And builds an AND expression of non-nil expressions.
 func And(exps ...Exp) Exp {
 	return junctionExp{
-		exps: exps,
+		exps: nonNil(exps),
 		op:   "AND",
 	}
 }
 
+// Or builds an OR expression of non-nil expressions.
 func Or(exps ...Exp) Exp {
 	return junctionExp{
-		exps: exps,
+		exps: nonNil(exps),
 		op:   "OR",
 	}
 }

@@ -822,6 +822,42 @@ func TestSelectBuilder_Where(t *testing.T) {
 			q,
 		)
 	})
+
+	t.Run("where in args", func(t *testing.T) {
+		ids := []int{1, 2, 3}
+
+		q := qrb.Select(qrb.N("username")).
+			From(qrb.N("accounts")).
+			Where(qrb.N("id").In(qrb.Args(ids...)))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT username
+			FROM accounts
+			WHERE id IN ($1, $2, $3)
+			`,
+			[]any{1, 2, 3},
+			q,
+		)
+	})
+
+	t.Run("where in exps", func(t *testing.T) {
+		q := qrb.Select(qrb.N("username")).
+			From(qrb.N("accounts")).
+			Where(qrb.N("id").In(qrb.Exps(qrb.Int(42), qrb.String("abc"))))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT username
+			FROM accounts
+			WHERE id IN (42, 'abc')
+			`,
+			nil,
+			q,
+		)
+	})
 }
 
 func TestSelectBuilder_GroupBy(t *testing.T) {

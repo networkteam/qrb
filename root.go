@@ -91,9 +91,9 @@ func Arg(argument any) builder.ExpBase {
 	return builder.Arg(argument)
 }
 
-// Args creates argument expressions for the given arguments.
-func Args(argument any, rest ...any) []builder.Exp {
-	return builder.Args(argument, rest...)
+// Args creates argument expressions for the given arguments (of the same type).
+func Args[T any](arguments ...T) builder.Expressions {
+	return builder.Args(arguments...)
 }
 
 // Bind creates an expression that represents an argument that will be bound to a placeholder with the given value.
@@ -144,7 +144,7 @@ func Interval(s string) builder.Exp {
 
 // Exps returns a slice of expressions, just for syntactic sugar.
 // TODO We could use this as a way to express a scalar list of expressions e.g. for IN by using a custom slice type
-func Exps(exps ...builder.Exp) []builder.Exp {
+func Exps(exps ...builder.Exp) builder.Expressions {
 	return exps
 }
 
