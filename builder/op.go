@@ -179,11 +179,12 @@ func (c junctionExp) WriteSQL(sb *SQLBuilder) {
 	}
 }
 
-func (b ExpBase) Cast(typ string) Exp {
-	return castExp{
+func (b ExpBase) Cast(typ string) ExpBase {
+	exp := castExp{
 		exp: b.Exp,
 		typ: typ,
 	}
+	return ExpBase{Exp: exp}
 }
 
 type castExp struct {

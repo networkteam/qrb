@@ -30,5 +30,16 @@ func TestOp(t *testing.T) {
 				b,
 			)
 		})
+
+		t.Run("cast and like", func(t *testing.T) {
+			b := qrb.N("articles.content").Cast("text").ILike(qrb.Arg("%foo%"))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"articles.content::text ILIKE $1",
+				[]any{"%foo%"},
+				b,
+			)
+		})
 	})
 }
