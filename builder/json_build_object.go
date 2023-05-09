@@ -42,7 +42,8 @@ func (b JsonBuildObjectBuilder) WriteSQL(sb *SQLBuilder) {
 func (b JsonBuildObjectBuilder) Prop(key string, value Exp) JsonBuildObjectBuilder {
 	newProps := b.props.Set(key, value)
 	return JsonBuildObjectBuilder{
-		props: newProps,
+		isJsonB: b.isJsonB,
+		props:   newProps,
 	}
 }
 
@@ -56,7 +57,8 @@ func (b JsonBuildObjectBuilder) PropIf(condition bool, key string, value Exp) Js
 func (b JsonBuildObjectBuilder) Unset(key string) JsonBuildObjectBuilder {
 	newProps := b.props.Delete(key)
 	return JsonBuildObjectBuilder{
-		props: newProps,
+		isJsonB: b.isJsonB,
+		props:   newProps,
 	}
 }
 
