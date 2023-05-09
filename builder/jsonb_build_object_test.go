@@ -11,7 +11,7 @@ import (
 
 func TestJsonbQuery(t *testing.T) {
 	t.Run("select json object", func(t *testing.T) {
-		b := qrb.SelectJsonb(
+		b := qrb.SelectJson(
 			fn.JsonbBuildObject().
 				Prop("id", qrb.N("authors.author_id")).
 				Prop("name", qrb.N("authors.name")),
@@ -28,7 +28,7 @@ func TestJsonbQuery(t *testing.T) {
 
 		// We can now modify an existing JSON selection!
 		// Each SelectBuilder acts as a kind of query blueprint that can be used to modify later.
-		withPostCount := b.ApplySelectJsonb(func(obj builder.JsonbBuildObjectBuilder) builder.JsonbBuildObjectBuilder {
+		withPostCount := b.ApplySelectJson(func(obj builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
 			return obj.Prop("postCount", fn.Count(qrb.N("posts")))
 		})
 

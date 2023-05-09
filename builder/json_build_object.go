@@ -1,13 +1,15 @@
 package builder
 
-func JsonBuildObject() JsonBuildObjectBuilder {
+func JsonBuildObject(isJsonB bool) JsonBuildObjectBuilder {
 	return JsonBuildObjectBuilder{
-		props: newImmutableSliceMap[string, Exp](),
+		isJsonB: isJsonB,
+		props:   newImmutableSliceMap[string, Exp](),
 	}
 }
 
 type JsonBuildObjectBuilder struct {
-	props immutableSliceMap[string, Exp]
+	isJsonB bool
+	props   immutableSliceMap[string, Exp]
 }
 
 var _ Exp = JsonBuildObjectBuilder{}
@@ -16,7 +18,11 @@ func (b JsonBuildObjectBuilder) IsExp()       {}
 func (b JsonBuildObjectBuilder) NoParensExp() {}
 
 func (b JsonBuildObjectBuilder) WriteSQL(sb *SQLBuilder) {
-	sb.WriteString("json_build_object(")
+	if b.isJsonB {
+		sb.WriteString("jsonb_build_object(")
+	} else {
+		sb.WriteString("json_build_object(")
+	}
 
 	i := 0
 	for _, entry := range b.props {

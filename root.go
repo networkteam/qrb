@@ -41,15 +41,6 @@ func SelectJson(obj builder.JsonBuildObjectBuilder) builder.SelectJsonSelectBuil
 	return selectBuilder.ApplySelectJson(func(builder builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder { return obj })
 }
 
-// SelectJsonb sets the JSON selection for this select builder.
-//
-// It will always be the first element in the select list.
-// It can be modified later by SelectBuilder.ApplySelectJsonb.
-func SelectJsonb(obj builder.JsonbBuildObjectBuilder) builder.SelectJsonbSelectBuilder {
-	var selectBuilder builder.SelectBuilder
-	return selectBuilder.ApplySelectJsonb(func(builder builder.JsonbBuildObjectBuilder) builder.JsonbBuildObjectBuilder { return obj })
-}
-
 // Agg builds an aggregate function expression.
 func Agg(name string, exps []builder.Exp) builder.AggExpBuilder {
 	return builder.Agg(name, exps)

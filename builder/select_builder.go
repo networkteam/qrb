@@ -30,9 +30,7 @@ type selectQueryParts struct {
 	distinct          bool
 	distinctOn        []Exp
 	selectJson        *JsonBuildObjectBuilder
-	selectJsonb       *JsonbBuildObjectBuilder
 	selectJsonAlias   string
-	selectJsonbAlias  string
 	selectList        []outputExp
 	from              []fromItem
 	whereConjunction  []Exp
@@ -142,22 +140,6 @@ func (b SelectBuilder) ApplySelectJson(apply func(obj JsonBuildObjectBuilder) Js
 	}
 }
 
-// ApplySelectJsonb applies the given function to the current JSONB selection (empty JsonbBuildObjectBuilder if none set).
-func (b SelectBuilder) ApplySelectJsonb(apply func(obj JsonbBuildObjectBuilder) JsonbBuildObjectBuilder) SelectJsonbSelectBuilder {
-	newBuilder := b
-
-	var obj JsonbBuildObjectBuilder
-	if newBuilder.parts.selectJsonb != nil {
-		obj = *newBuilder.parts.selectJsonb
-	}
-	obj = apply(obj)
-	newBuilder.parts.selectJsonb = &obj
-
-	return SelectJsonbSelectBuilder{
-		SelectBuilder: newBuilder,
-	}
-}
-
 type SelectJsonSelectBuilder struct {
 	SelectBuilder
 }
@@ -168,20 +150,6 @@ func (b SelectJsonSelectBuilder) As(alias string) SelectJsonSelectBuilder {
 	newBuilder.parts.selectJsonAlias = alias
 
 	return SelectJsonSelectBuilder{
-		SelectBuilder: newBuilder,
-	}
-}
-
-type SelectJsonbSelectBuilder struct {
-	SelectBuilder
-}
-
-func (b SelectJsonbSelectBuilder) As(alias string) SelectJsonbSelectBuilder {
-	newBuilder := b.SelectBuilder
-
-	newBuilder.parts.selectJsonbAlias = alias
-
-	return SelectJsonbSelectBuilder{
 		SelectBuilder: newBuilder,
 	}
 }
@@ -829,12 +797,6 @@ func writeSelectParts(sb *SQLBuilder, parts selectQueryParts) {
 	}
 	if parts.selectJson != nil {
 		parts.selectJson.WriteSQL(sb)
-		if len(parts.selectList) > 0 {
-			sb.WriteString(",")
-		}
-	}
-	if parts.selectJsonb != nil {
-		parts.selectJsonb.WriteSQL(sb)
 		if len(parts.selectList) > 0 {
 			sb.WriteString(",")
 		}
