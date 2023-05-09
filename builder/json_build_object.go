@@ -1,13 +1,15 @@
 package builder
 
-func JsonBuildObject() JsonBuildObjectBuilder {
+func JsonBuildObject(isJsonB bool) JsonBuildObjectBuilder {
 	return JsonBuildObjectBuilder{
-		props: newImmutableSliceMap[string, Exp](),
+		isJsonB: isJsonB,
+		props:   newImmutableSliceMap[string, Exp](),
 	}
 }
 
 type JsonBuildObjectBuilder struct {
-	props immutableSliceMap[string, Exp]
+	isJsonB bool
+	props   immutableSliceMap[string, Exp]
 }
 
 var _ Exp = JsonBuildObjectBuilder{}
@@ -16,7 +18,11 @@ func (b JsonBuildObjectBuilder) IsExp()       {}
 func (b JsonBuildObjectBuilder) NoParensExp() {}
 
 func (b JsonBuildObjectBuilder) WriteSQL(sb *SQLBuilder) {
-	sb.WriteString("json_build_object(")
+	if b.isJsonB {
+		sb.WriteString("jsonb_build_object(")
+	} else {
+		sb.WriteString("json_build_object(")
+	}
 
 	i := 0
 	for _, entry := range b.props {
@@ -36,7 +42,8 @@ func (b JsonBuildObjectBuilder) WriteSQL(sb *SQLBuilder) {
 func (b JsonBuildObjectBuilder) Prop(key string, value Exp) JsonBuildObjectBuilder {
 	newProps := b.props.Set(key, value)
 	return JsonBuildObjectBuilder{
-		props: newProps,
+		isJsonB: b.isJsonB,
+		props:   newProps,
 	}
 }
 
@@ -50,7 +57,8 @@ func (b JsonBuildObjectBuilder) PropIf(condition bool, key string, value Exp) Js
 func (b JsonBuildObjectBuilder) Unset(key string) JsonBuildObjectBuilder {
 	newProps := b.props.Delete(key)
 	return JsonBuildObjectBuilder{
-		props: newProps,
+		isJsonB: b.isJsonB,
+		props:   newProps,
 	}
 }
 
