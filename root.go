@@ -69,19 +69,19 @@ func Case(exp ...builder.Exp) builder.CaseBuilder {
 	return builder.Case(exp...)
 }
 
-func Coalesce(exp builder.Exp, rest ...builder.Exp) builder.FuncExp {
+func Coalesce(exp builder.Exp, rest ...builder.Exp) builder.ExpBase {
 	return builder.Coalesce(exp, rest...)
 }
 
-func NullIf(value1, value2 builder.Exp) builder.FuncExp {
+func NullIf(value1, value2 builder.Exp) builder.ExpBase {
 	return builder.NullIf(value1, value2)
 }
 
-func Greatest(exp builder.Exp, rest ...builder.Exp) builder.FuncExp {
+func Greatest(exp builder.Exp, rest ...builder.Exp) builder.ExpBase {
 	return builder.Greatest(exp, rest...)
 }
 
-func Least(exp builder.Exp, rest ...builder.Exp) builder.FuncExp {
+func Least(exp builder.Exp, rest ...builder.Exp) builder.ExpBase {
 	return builder.Least(exp, rest...)
 }
 
