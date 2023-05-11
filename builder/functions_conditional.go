@@ -101,24 +101,24 @@ func (c CaseExp) WriteSQL(sb *SQLBuilder) {
 
 // COALESCE(value [, ...])
 
-func Coalesce(exp Exp, rest ...Exp) FuncExp {
-	return funcExp("COALESCE", append([]Exp{exp}, rest...))
+func Coalesce(exp Exp, rest ...Exp) ExpBase {
+	return FuncExp("COALESCE", append([]Exp{exp}, rest...))
 }
 
 // NULLIF(value1, value2)
 
-func NullIf(value1, value2 Exp) FuncExp {
-	return funcExp("NULLIF", []Exp{value1, value2})
+func NullIf(value1, value2 Exp) ExpBase {
+	return FuncExp("NULLIF", []Exp{value1, value2})
 }
 
 // GREATEST(value [, ...])
 
-func Greatest(exp Exp, rest ...Exp) FuncExp {
-	return funcExp("GREATEST", append([]Exp{exp}, rest...))
+func Greatest(exp Exp, rest ...Exp) ExpBase {
+	return FuncExp("GREATEST", append([]Exp{exp}, rest...))
 }
 
 // LEAST(value [, ...])
 
-func Least(exp Exp, rest ...Exp) FuncExp {
-	return funcExp("LEAST", append([]Exp{exp}, rest...))
+func Least(exp Exp, rest ...Exp) ExpBase {
+	return FuncExp("LEAST", append([]Exp{exp}, rest...))
 }
