@@ -40,6 +40,31 @@ type selectQueryParts struct {
 	orderBys          []orderByClause
 	limit             Exp
 	offset            Exp
+	lockingClause     lockingClause
+}
+
+type lockingClause struct {
+	lockStrength string
+	ofTables     []string
+	waitPolicy   string
+}
+
+func (c lockingClause) WriteSQL(sb *SQLBuilder) {
+	sb.WriteString("FOR ")
+	sb.WriteString(c.lockStrength)
+	if len(c.ofTables) > 0 {
+		sb.WriteString(" OF ")
+		for i, name := range c.ofTables {
+			if i > 0 {
+				sb.WriteString(",")
+			}
+			sb.WriteString(name)
+		}
+	}
+	if c.waitPolicy != "" {
+		sb.WriteString(" ")
+		sb.WriteString(c.waitPolicy)
+	}
 }
 
 type combinationType string
@@ -306,6 +331,64 @@ func (r RowsFromBuilder) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(")")
 	if r.withOrdinality {
 		sb.WriteString(" WITH ORDINALITY")
+	}
+}
+
+type ForSelectBuilder struct {
+	SelectBuilder
+}
+
+func (b SelectBuilder) ForUpdate() ForSelectBuilder {
+	newBuilder := b
+	newBuilder.parts.lockingClause = lockingClause{lockStrength: "UPDATE"}
+	return ForSelectBuilder{SelectBuilder: newBuilder}
+}
+
+func (b SelectBuilder) ForNoKeyUpdate() ForSelectBuilder {
+	newBuilder := b
+	newBuilder.parts.lockingClause = lockingClause{lockStrength: "NO KEY UPDATE"}
+	return ForSelectBuilder{SelectBuilder: newBuilder}
+}
+
+func (b SelectBuilder) ForShare() ForSelectBuilder {
+	newBuilder := b
+	newBuilder.parts.lockingClause = lockingClause{lockStrength: "SHARE"}
+	return ForSelectBuilder{SelectBuilder: newBuilder}
+}
+
+func (b SelectBuilder) ForKeyShare() ForSelectBuilder {
+	newBuilder := b
+	newBuilder.parts.lockingClause = lockingClause{lockStrength: "KEY SHARE"}
+	return ForSelectBuilder{SelectBuilder: newBuilder}
+}
+
+func (fb ForSelectBuilder) Of(tableName string, tableNames ...string) ForSelectBuilder {
+	newBuilder := fb.SelectBuilder
+
+	newBuilder.parts.lockingClause.ofTables = append([]string{tableName}, tableNames...)
+
+	return ForSelectBuilder{
+		SelectBuilder: newBuilder,
+	}
+}
+
+func (fb ForSelectBuilder) Nowait() ForSelectBuilder {
+	newBuilder := fb.SelectBuilder
+
+	newBuilder.parts.lockingClause.waitPolicy = "NOWAIT"
+
+	return ForSelectBuilder{
+		SelectBuilder: newBuilder,
+	}
+}
+
+func (fb ForSelectBuilder) SkipLocked() ForSelectBuilder {
+	newBuilder := fb.SelectBuilder
+
+	newBuilder.parts.lockingClause.waitPolicy = "SKIP LOCKED"
+
+	return ForSelectBuilder{
+		SelectBuilder: newBuilder,
 	}
 }
 
@@ -777,6 +860,11 @@ func (b SelectBuilder) innerWriteSQL(sb *SQLBuilder) {
 	if b.parts.offset != nil {
 		sb.WriteString(" OFFSET ")
 		b.parts.offset.WriteSQL(sb)
+	}
+
+	if b.parts.lockingClause.lockStrength != "" {
+		sb.WriteString(" ")
+		b.parts.lockingClause.WriteSQL(sb)
 	}
 }
 

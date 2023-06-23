@@ -1050,3 +1050,19 @@ func TestSelectBuilder_With(t *testing.T) {
 		)
 	})
 }
+
+func TestSelectBuilder_For(t *testing.T) {
+	t.Run("for update", func(t *testing.T) {
+		var q builder.SelectBuilder = qrb.Select(qrb.N("foo")).From(qrb.N("bar")).ForUpdate().
+			SelectBuilder
+
+		testhelper.AssertSQLWriterEquals(t, "SELECT foo FROM bar FOR UPDATE", nil, q)
+	})
+
+	t.Run("for key share of table1, table2 skip locked", func(t *testing.T) {
+		var q builder.SelectBuilder = qrb.Select(qrb.N("foo")).From(qrb.N("bar")).ForKeyShare().Of("table1", "table2").SkipLocked().
+			SelectBuilder
+
+		testhelper.AssertSQLWriterEquals(t, "SELECT foo FROM bar FOR KEY SHARE OF table1,table2 SKIP LOCKED", nil, q)
+	})
+}
