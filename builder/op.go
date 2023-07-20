@@ -124,7 +124,16 @@ func (u unaryExp) WriteSQL(sb *SQLBuilder) {
 		sb.WriteString(u.prefix)
 		sb.WriteRune(' ')
 	}
+
+	_, needsParens := u.exp.(junctionExp)
+	if needsParens {
+		sb.WriteRune('(')
+	}
 	u.exp.WriteSQL(sb)
+	if needsParens {
+		sb.WriteRune(')')
+	}
+
 	if u.suffix != "" {
 		sb.WriteRune(' ')
 		sb.WriteString(u.suffix)

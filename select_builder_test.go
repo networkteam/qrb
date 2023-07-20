@@ -858,6 +858,45 @@ func TestSelectBuilder_Where(t *testing.T) {
 			q,
 		)
 	})
+
+	t.Run("where with negated junction", func(t *testing.T) {
+		q := qrb.Select(qrb.N("*")).
+			From(qrb.N("accounts")).
+			Where(qrb.Not(qrb.And(
+				qrb.N("is_active").Eq(qrb.Bool(true)),
+				qrb.N("username").Eq(qrb.Arg("admin")),
+			)))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT *
+			FROM accounts
+			WHERE NOT (is_active = true AND username = $1)
+			`,
+			[]any{"admin"},
+			q,
+		)
+	})
+
+	t.Run("where with negated comparison", func(t *testing.T) {
+		q := qrb.Select(qrb.N("*")).
+			From(qrb.N("accounts")).
+			Where(qrb.Not(
+				qrb.N("is_active").Eq(qrb.Bool(true)),
+			))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT *
+			FROM accounts
+			WHERE NOT is_active = true
+			`,
+			nil,
+			q,
+		)
+	})
 }
 
 func TestSelectBuilder_GroupBy(t *testing.T) {

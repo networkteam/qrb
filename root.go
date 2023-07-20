@@ -65,6 +65,10 @@ func Or(exps ...builder.Exp) builder.Exp {
 	return builder.Or(exps...)
 }
 
+func Not(exp builder.Exp) builder.Exp {
+	return builder.Not(exp)
+}
+
 func Case(exp ...builder.Exp) builder.CaseBuilder {
 	return builder.Case(exp...)
 }
