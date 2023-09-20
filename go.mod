@@ -4,14 +4,14 @@ go 1.20
 
 // Note that this module is not using dependencies, besides tests and for the qrbpgx package.
 require (
-	// Used only for tests
-	github.com/stretchr/testify v1.8.2
 	// Used only for tests of qrbsql
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	// Used only in qrbpgx
 	github.com/jackc/pgx/v5 v5.3.1
 	// Used only for tests of qrbpx
 	github.com/pashagolub/pgxmock/v2 v2.6.0
+	// Used only for tests
+	github.com/stretchr/testify v1.8.2
 )
 
 require (

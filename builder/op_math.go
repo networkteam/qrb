@@ -25,8 +25,9 @@ func (b ExpBase) Minus(rgt Exp) ExpBase {
 func Neg(exp Exp) ExpBase {
 	return ExpBase{
 		Exp: unaryExp{
-			prefix: "-",
-			exp:    exp,
+			prefix:     "-",
+			exp:        exp,
+			precedence: 4, // see opPrecedence for unary minus
 		},
 	}
 }

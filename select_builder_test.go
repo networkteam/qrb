@@ -897,6 +897,27 @@ func TestSelectBuilder_Where(t *testing.T) {
 			q,
 		)
 	})
+
+	t.Run("where with equal is not null", func(t *testing.T) {
+		isActive := true
+
+		q := qrb.Select(qrb.N("*")).
+			From(qrb.N("accounts")).
+			Where(qrb.Arg(isActive).Eq(
+				qrb.N("deactivated_at").IsNull(),
+			))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT *
+			FROM accounts
+			WHERE $1 = (deactivated_at IS NULL)
+			`,
+			[]any{true},
+			q,
+		)
+	})
 }
 
 func TestSelectBuilder_GroupBy(t *testing.T) {

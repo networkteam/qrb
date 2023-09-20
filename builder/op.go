@@ -22,12 +22,55 @@ const (
 	opRegexpINotMatch Operator = "!~*"
 )
 
+// Mapping of operators to their precedence, higher number means higher precedence.
+// We also include other operators (not using Op) to have a complete mapping.
+// See https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-PRECEDENCE.
+var opPrecedence = map[Operator]int{
+	Operator("."):  7,
+	Operator("::"): 6,
+	// 5: [ ] Array element selection
+	// 4: unary plus / minus
+	opPow:    3,
+	opMult:   2,
+	opDivide: 2,
+	opMod:    2,
+	opPlus:   1,
+	opMinus:  1,
+	// 0: any other operator (clever use of zero value)
+	Operator("BETWEEN"):  -1,
+	Operator("IN"):       -1,
+	Operator("LIKE"):     -1,
+	Operator("ILIKE"):    -1,
+	Operator("SIMILAR"):  -1,
+	opLessThan:           -2,
+	opGreaterThan:        -2,
+	opEqual:              -2,
+	opLessThanOrEqual:    -2,
+	opGreaterThanOrEqual: -2,
+	opNotEqual:           -2,
+	Operator("IS"):       -3,
+	Operator("ISNULL"):   -3,
+	Operator("NOTNULL"):  -3,
+	Operator("NOT"):      -4,
+	Operator("AND"):      -5,
+	Operator("OR"):       -5,
+}
+
+type Precedencer interface {
+	Precedence() int
+}
+
 // Op allows to use arbitrary operators.
 //
 // Example:
 //
 //	N("a").Op(Operator("^"), Int(5))
 func (b ExpBase) Op(op Operator, rgt Exp) ExpBase {
+	// Unwrap any ExpBase.
+	if rgtIsExpBase, ok := rgt.(ExpBase); ok {
+		rgt = rgtIsExpBase.Exp
+	}
+
 	return ExpBase{
 		Exp: opExp{
 			lft: b.Exp,
@@ -38,19 +81,56 @@ func (b ExpBase) Op(op Operator, rgt Exp) ExpBase {
 }
 
 type opExp struct {
-	lft Exp
-	op  Operator
-	rgt Exp
+	lft      Exp
+	op       Operator
+	rgt      Exp
+	unspaced bool
 }
 
 func (c opExp) IsExp() {}
 
 func (c opExp) WriteSQL(sb *SQLBuilder) {
+	lftNeedsParens := false
+	if lftPrecedence, ok := c.lft.(Precedencer); ok {
+		lftNeedsParens = lftPrecedence.Precedence() < c.Precedence()
+	}
+
+	if lftNeedsParens {
+		sb.WriteRune('(')
+	}
 	c.lft.WriteSQL(sb)
-	sb.WriteRune(' ')
+	if lftNeedsParens {
+		sb.WriteRune(')')
+	}
+
+	if !c.unspaced {
+		sb.WriteRune(' ')
+	}
 	sb.WriteString(string(c.op))
-	sb.WriteRune(' ')
+	if !c.unspaced {
+		sb.WriteRune(' ')
+	}
+
+	rgtNeedsParens := false
+	if rgtPrecedence, ok := c.rgt.(Precedencer); ok {
+		rgtNeedsParens = rgtPrecedence.Precedence() < c.Precedence()
+		// Special case: if the right expression is an opExp with a different operator and the same precedence (e.g. + / -), we need parentheses.
+		if rgtOpExp, ok := c.rgt.(opExp); ok && rgtOpExp.op != c.op && rgtPrecedence.Precedence() == c.Precedence() {
+			rgtNeedsParens = true
+		}
+	}
+
+	if rgtNeedsParens {
+		sb.WriteRune('(')
+	}
 	c.rgt.WriteSQL(sb)
+	if rgtNeedsParens {
+		sb.WriteRune(')')
+	}
+}
+
+func (c opExp) Precedence() int {
+	return opPrecedence[c.op]
 }
 
 // Common operators
@@ -90,34 +170,42 @@ func (b ExpBase) Concat(rgt Exp) ExpBase {
 // Not builds a NOT expression.
 func Not(e Exp) Exp {
 	return unaryExp{
-		prefix: "NOT",
-		exp:    e,
+		prefix:     "NOT",
+		exp:        e,
+		precedence: opPrecedence["NOT"],
 	}
 }
 
 // IsNull builds an IS NULL expression.
 func (b ExpBase) IsNull() Exp {
 	return unaryExp{
-		exp:    b.Exp,
-		suffix: "IS NULL",
+		exp:        b.Exp,
+		suffix:     "IS NULL",
+		precedence: opPrecedence["IS"],
 	}
 }
 
 // IsNotNull builds an IS NOT NULL expression.
 func (b ExpBase) IsNotNull() Exp {
 	return unaryExp{
-		exp:    b.Exp,
-		suffix: "IS NOT NULL",
+		exp:        b.Exp,
+		suffix:     "IS NOT NULL",
+		precedence: opPrecedence["IS"],
 	}
 }
 
 type unaryExp struct {
-	prefix string
-	exp    Exp
-	suffix string
+	prefix     string
+	exp        Exp
+	suffix     string
+	precedence int
 }
 
 func (u unaryExp) IsExp() {}
+
+func (u unaryExp) Precedence() int {
+	return u.precedence
+}
 
 func (u unaryExp) WriteSQL(sb *SQLBuilder) {
 	if u.prefix != "" {
@@ -125,7 +213,11 @@ func (u unaryExp) WriteSQL(sb *SQLBuilder) {
 		sb.WriteRune(' ')
 	}
 
-	_, needsParens := u.exp.(junctionExp)
+	needsParens := false
+	if expPrecedence, ok := u.exp.(Precedencer); ok {
+		needsParens = expPrecedence.Precedence() < u.precedence
+	}
+
 	if needsParens {
 		sb.WriteRune('(')
 	}
@@ -165,6 +257,10 @@ type junctionExp struct {
 
 func (c junctionExp) IsExp() {}
 
+func (c junctionExp) Precedence() int {
+	return opPrecedence[Operator(c.op)]
+}
+
 func (c junctionExp) WriteSQL(sb *SQLBuilder) {
 	if len(c.exps) == 1 {
 		c.exps[0].WriteSQL(sb)
@@ -189,31 +285,13 @@ func (c junctionExp) WriteSQL(sb *SQLBuilder) {
 }
 
 func (b ExpBase) Cast(typ string) ExpBase {
-	exp := castExp{
-		exp: b.Exp,
-		typ: typ,
+	exp := opExp{
+		lft:      b.Exp,
+		op:       Operator("::"),
+		rgt:      N(typ),
+		unspaced: true,
 	}
 	return ExpBase{Exp: exp}
-}
-
-type castExp struct {
-	exp Exp
-	typ string
-}
-
-func (c castExp) IsExp() {}
-
-func (c castExp) WriteSQL(sb *SQLBuilder) {
-	_, needsNoParens := c.exp.(noParensExp)
-	if !needsNoParens {
-		sb.WriteRune('(')
-	}
-	c.exp.WriteSQL(sb)
-	if !needsNoParens {
-		sb.WriteRune(')')
-	}
-	sb.WriteString("::")
-	sb.WriteString(c.typ)
 }
 
 func (b ExpBase) In(selectOrExpressions SelectOrExpressions) Exp {

@@ -42,4 +42,73 @@ func TestOp(t *testing.T) {
 			)
 		})
 	})
+
+	t.Run("precedence", func(t *testing.T) {
+		t.Run("plus and mult", func(t *testing.T) {
+			b := qrb.N("a").Plus(qrb.N("b")).Mult(qrb.N("c"))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"(a + b) * c",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("plus, plus and grouped minus", func(t *testing.T) {
+			b := qrb.N("a").Plus(qrb.N("b")).Plus(qrb.N("c").Minus(qrb.N("d")))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"a + b + (c - d)",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("plus, plus and minus", func(t *testing.T) {
+			b := qrb.N("a").Plus(qrb.N("b")).Plus(qrb.N("c")).Minus(qrb.N("d"))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"a + b + c - d",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("plus, minus and plus", func(t *testing.T) {
+			b := qrb.N("a").Plus(qrb.N("b")).Minus(qrb.N("c").Plus(qrb.N("d")))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"a + b - (c + d)",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("plus, plus and plus", func(t *testing.T) {
+			b := qrb.N("a").Plus(qrb.N("b")).Plus(qrb.N("c").Plus(qrb.N("d")))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"a + b + c + d",
+				nil,
+				b,
+			)
+		})
+		t.Run("plus times plus", func(t *testing.T) {
+			e1 := qrb.N("a").Plus(qrb.N("b"))
+			e2 := qrb.N("c").Plus(qrb.N("d"))
+			b := e1.Mult(e2)
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"(a + b) * (c + d)",
+				nil,
+				b,
+			)
+		})
+	})
 }
