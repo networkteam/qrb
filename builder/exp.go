@@ -11,9 +11,3 @@ type ExpBase struct {
 }
 
 func (ExpBase) IsExp() {}
-
-// noParensExp is a marker interface for expressions that do not need to be wrapped in parentheses (again) e.g. when combined via other operators (e.g. cast).
-type noParensExp interface {
-	Exp
-	NoParensExp()
-}

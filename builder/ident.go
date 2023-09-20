@@ -22,9 +22,8 @@ type IdentExp struct {
 	ident string
 }
 
-func (i IdentExp) IsExp()       {}
-func (i IdentExp) isFromExp()   {}
-func (i IdentExp) NoParensExp() {}
+func (i IdentExp) IsExp()     {}
+func (i IdentExp) isFromExp() {}
 
 func (i IdentExp) Ident() string {
 	return i.ident

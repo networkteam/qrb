@@ -19,8 +19,7 @@ type extractExp struct {
 	from  builder.Exp
 }
 
-func (c extractExp) IsExp()       {}
-func (c extractExp) NoParensExp() {}
+func (c extractExp) IsExp() {}
 
 func (c extractExp) WriteSQL(sb *builder.SQLBuilder) {
 	sb.WriteString("EXTRACT(")

@@ -14,8 +14,7 @@ type JsonBuildObjectBuilder struct {
 
 var _ Exp = JsonBuildObjectBuilder{}
 
-func (b JsonBuildObjectBuilder) IsExp()       {}
-func (b JsonBuildObjectBuilder) NoParensExp() {}
+func (b JsonBuildObjectBuilder) IsExp() {}
 
 func (b JsonBuildObjectBuilder) WriteSQL(sb *SQLBuilder) {
 	if b.isJsonB {
