@@ -1,7 +1,7 @@
 # QRB
 
 [![GoDoc](https://godoc.org/github.com/networkteam/qrb?status.svg)](https://godoc.org/github.com/networkteam/qrb)
-[![Build Status](https://github.com/networkteam/qrb/workflows/Go/badge.svg)](https://github.com/networkteam/qrb/actions?workflow=run%20tests)
+[![Build Status](https://github.com/networkteam/qrb/actions/workflows/test.yml/badge.svg)](https://github.com/networkteam/qrb/actions/workflows/test.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/networkteam/qrb)](https://goreportcard.com/report/github.com/networkteam/qrb)
 [![codecov](https://codecov.io/gh/networkteam/qrb/branch/main/graph/badge.svg?token=S8X8TMLQ9O)](https://codecov.io/gh/networkteam/qrb)
 
