@@ -41,6 +41,17 @@ func TestOp(t *testing.T) {
 				b,
 			)
 		})
+
+		t.Run("array type", func(t *testing.T) {
+			b := qrb.Array(qrb.Arg("foo"), qrb.Arg("bar")).Cast("uuid[]")
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"ARRAY[$1, $2]::uuid[]",
+				[]any{"foo", "bar"},
+				b,
+			)
+		})
 	})
 
 	t.Run("precedence", func(t *testing.T) {

@@ -53,8 +53,10 @@ func (e expBool) WriteSQL(sb *SQLBuilder) {
 // Array builds an array literal.
 //
 // Make sure that all elements are of the same type.
-func Array(elems ...Exp) Exp {
-	return expArray(elems)
+func Array(elems ...Exp) ExpBase {
+	return ExpBase{
+		Exp: expArray(elems),
+	}
 }
 
 type expArray []Exp

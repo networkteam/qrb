@@ -130,7 +130,7 @@ func Bool(b bool) builder.Exp {
 	return builder.Bool(b)
 }
 
-func Array(exps ...builder.Exp) builder.Exp {
+func Array(exps ...builder.Exp) builder.ExpBase {
 	return builder.Array(exps...)
 }
 

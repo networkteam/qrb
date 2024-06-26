@@ -288,7 +288,7 @@ func (b ExpBase) Cast(typ string) ExpBase {
 	exp := opExp{
 		lft:      b.Exp,
 		op:       Operator("::"),
-		rgt:      N(typ),
+		rgt:      expType(typ),
 		unspaced: true,
 	}
 	return ExpBase{Exp: exp}
