@@ -158,6 +158,16 @@ func Exists(subquery builder.SelectExp) builder.Exp {
 	return builder.Exists(subquery)
 }
 
+// --- Row and Array Comparisons
+
+func Any(exp builder.Exp) builder.Exp {
+	return builder.Any(exp)
+}
+
+func All(exp builder.Exp) builder.Exp {
+	return builder.All(exp)
+}
+
 // --- Commands
 
 func InsertInto(tableName builder.Identer) builder.InsertBuilder {

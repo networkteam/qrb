@@ -937,6 +937,40 @@ func TestSelectBuilder_Where(t *testing.T) {
 			q,
 		)
 	})
+
+	t.Run("where all with subselect", func(t *testing.T) {
+		q := qrb.Select(qrb.N("*")).
+			From(qrb.N("employees")).
+			Where(qrb.N("salary").Gt(qrb.All(qrb.Select(qrb.N("salary")).From(qrb.N("managers")))))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT *
+			FROM employees 
+			WHERE salary > ALL (SELECT salary FROM managers)
+			`,
+			nil,
+			q,
+		)
+	})
+
+	t.Run("where any with array", func(t *testing.T) {
+		q := qrb.Select(qrb.N("*")).
+			From(qrb.N("table")).
+			Where(qrb.N("column").Eq(qrb.Any(qrb.Array(qrb.Int(1), qrb.Int(2), qrb.Int(3)))))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT *
+			FROM table
+			WHERE column = ANY (ARRAY[1, 2, 3])
+			`,
+			nil,
+			q,
+		)
+	})
 }
 
 func TestSelectBuilder_GroupBy(t *testing.T) {
