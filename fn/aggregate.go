@@ -39,7 +39,7 @@ func BitAnd(exp builder.Exp) builder.AggExpBuilder {
 
 // BitOr builds the bit_or aggregate function.
 //
-// bit_or ( T ) → T
+//	bit_or ( T ) → T
 //
 // Computes the bitwise OR of all non-null input values.
 func BitOr(exp builder.Exp) builder.AggExpBuilder {
@@ -48,7 +48,7 @@ func BitOr(exp builder.Exp) builder.AggExpBuilder {
 
 // BitXor builds the bit_xor aggregate function.
 //
-// bit_xor ( T ) → T
+//	bit_xor ( T ) → T
 //
 // Computes the bitwise exclusive OR of all non-null input values. Can be useful as a checksum for an unordered set of values.
 func BitXor(exp builder.Exp) builder.AggExpBuilder {
@@ -57,7 +57,7 @@ func BitXor(exp builder.Exp) builder.AggExpBuilder {
 
 // BoolAnd builds the bool_and aggregate function.
 //
-// bool_and ( boolean ) → boolean
+//	bool_and ( boolean ) → boolean
 //
 // Returns true if all non-null input values are true, otherwise false.
 func BoolAnd(exp builder.Exp) builder.AggExpBuilder {
@@ -66,7 +66,7 @@ func BoolAnd(exp builder.Exp) builder.AggExpBuilder {
 
 // BoolOr builds the bool_or aggregate function.
 //
-// bool_or ( boolean ) → boolean
+//	bool_or ( boolean ) → boolean
 //
 // Returns true if any non-null input value is true, otherwise false.
 func BoolOr(exp builder.Exp) builder.AggExpBuilder {

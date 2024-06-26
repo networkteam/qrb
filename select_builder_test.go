@@ -823,6 +823,25 @@ func TestSelectBuilder_Where(t *testing.T) {
 		)
 	})
 
+	t.Run("where not exists", func(t *testing.T) {
+		q := qrb.Select(qrb.N("col1")).
+			From(qrb.N("tab1")).
+			Where(qrb.Not(qrb.Exists(
+				qrb.Select(qrb.Int(1)).From(qrb.N("tab2")).Where(qrb.N("col2").Eq(qrb.N("tab1.col2"))),
+			)))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT col1
+			FROM tab1
+			WHERE NOT EXISTS (SELECT 1 FROM tab2 WHERE col2 = tab1.col2)
+			`,
+			nil,
+			q,
+		)
+	})
+
 	t.Run("where in args", func(t *testing.T) {
 		ids := []int{1, 2, 3}
 
