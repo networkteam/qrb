@@ -196,3 +196,13 @@ func (b UpdateBuilder) innerWriteSQL(sb *SQLBuilder) {
 		b.returningItems.WriteSQL(sb)
 	}
 }
+
+// ApplyIf applies the given function to the builder if the condition is true.
+// It returns the builder itself if the condition is false, otherwise it returns the result of the function.
+// It's especially helpful for building a query conditionally.
+func (b UpdateBuilder) ApplyIf(cond bool, apply func(q UpdateBuilder) UpdateBuilder) UpdateBuilder {
+	if cond && apply != nil {
+		return apply(b)
+	}
+	return b
+}

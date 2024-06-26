@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/networkteam/qrb"
+	"github.com/networkteam/qrb/builder"
 	"github.com/networkteam/qrb/internal/testhelper"
 )
 
@@ -130,6 +131,25 @@ func TestUpdateBuilder(t *testing.T) {
 			UPDATE films SET code = $1, kind = $2 WHERE kind = 'Drama'	
 			`,
 			[]any{"UA502", "Comedy"},
+			q,
+		)
+	})
+
+	t.Run("apply if", func(t *testing.T) {
+		q := qrb.
+			Update(qrb.N("films")).
+			Set("kind", qrb.String("Dramatic")).
+			Where(qrb.N("kind").Eq(qrb.String("Drama"))).
+			ApplyIf(true, func(q builder.UpdateBuilder) builder.UpdateBuilder {
+				return q.Where(qrb.N("archived").Eq(qrb.Bool(false)))
+			})
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			UPDATE films SET kind = 'Dramatic' WHERE kind = 'Drama' AND archived = false
+			`,
+			nil,
 			q,
 		)
 	})
