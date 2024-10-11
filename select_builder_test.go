@@ -187,7 +187,6 @@ func TestSelectBuilder(t *testing.T) {
 	})
 
 	t.Run("complex nested JSON with subselects", func(t *testing.T) {
-
 		type authorQueryOpts struct {
 			IncludeBooks bool
 		}
@@ -233,16 +232,15 @@ func TestSelectBuilder(t *testing.T) {
 			return selectAuthors(opts.AuthorOpts).Where(qrb.N("authors.author_id").Eq(qrb.N("books.author_id")))
 		}
 
-		selectBookGenres := qrb.
-			Select(qrb.Coalesce(fn.JsonAgg(genreJSON).OrderBy(qrb.N("genres.name")), qrb.String("[]"))).
-			From(qrb.N("book_genre")).
-			LeftJoin(qrb.N("genres")).Using("genre_id").
-			Where(qrb.N("book_genre.book_id").Eq(qrb.N("books.book_id")))
-
 		buildBookJSON := func(opts bookQueryOpts) builder.JsonBuildObjectBuilder {
 			return baseBookJSON.
 				PropIf(opts.IncludeAuthor, "Author", selectBookAuthor(opts)).
-				PropIf(opts.IncludeGenres, "Genres", selectBookGenres)
+				ApplyIf(opts.IncludeGenres, func(b builder.JsonBuildObjectBuilder) builder.JsonBuildObjectBuilder {
+					return b.Prop("Genres", qrb.Select(qrb.Coalesce(fn.JsonAgg(genreJSON).OrderBy(qrb.N("genres.name")), qrb.String("[]"))).
+						From(qrb.N("book_genre")).
+						LeftJoin(qrb.N("genres")).Using("genre_id").
+						Where(qrb.N("book_genre.book_id").Eq(qrb.N("books.book_id"))))
+				})
 		}
 
 		selectBook := func(opts bookQueryOpts) builder.SelectBuilder {

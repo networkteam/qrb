@@ -53,6 +53,13 @@ func (b JsonBuildObjectBuilder) PropIf(condition bool, key string, value Exp) Js
 	return b
 }
 
+func (b JsonBuildObjectBuilder) ApplyIf(condition bool, apply func(b JsonBuildObjectBuilder) JsonBuildObjectBuilder) JsonBuildObjectBuilder {
+	if condition {
+		return apply(b)
+	}
+	return b
+}
+
 func (b JsonBuildObjectBuilder) Unset(key string) JsonBuildObjectBuilder {
 	newProps := b.props.Delete(key)
 	return JsonBuildObjectBuilder{
