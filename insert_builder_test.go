@@ -3,6 +3,9 @@ package qrb_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/networkteam/qrb"
 	"github.com/networkteam/qrb/builder"
 	"github.com/networkteam/qrb/internal/testhelper"
@@ -241,23 +244,23 @@ func TestInsertBuilder(t *testing.T) {
 			)
 		})
 
-		t.Run("example 12a", func(t *testing.T) {
+		t.Run("example 12a - pretty printed", func(t *testing.T) {
 			q := qrb.InsertInto(qrb.N("distributors")).As("d").ColumnNames("did", "dname").
 				Values(qrb.Int(8), qrb.String("Anvil Distribution")).
 				OnConflict(qrb.N("did")).DoUpdate().
 				Set("dname", qrb.N("EXCLUDED.dname").Concat(qrb.String(" (formerly ")).Concat(qrb.N("d.dname")).Concat(qrb.String(")"))).
 				Where(qrb.N("d.zipcode").Neq(qrb.String("21201")))
 
-			testhelper.AssertSQLWriterEquals(
-				t,
-				`
-				INSERT INTO distributors AS d (did, dname) VALUES (8, 'Anvil Distribution')
-				ON CONFLICT (did) DO UPDATE
-				SET dname = EXCLUDED.dname || ' (formerly ' || d.dname || ')'
-				WHERE d.zipcode <> '21201'
-				`,
-				nil,
-				q,
+			sql, _, err := qrb.Build(q).PrettyPrint().ToSQL()
+			require.NoError(t, err)
+
+			assert.Equal(t,
+				`INSERT INTO distributors AS d (did, dname)
+VALUES (8, 'Anvil Distribution')
+ON CONFLICT (did) DO UPDATE
+    SET dname = EXCLUDED.dname || ' (formerly ' || d.dname || ')'
+WHERE d.zipcode <> '21201'`,
+				sql,
 			)
 		})
 
@@ -359,5 +362,22 @@ func TestInsertBuilder(t *testing.T) {
 			nil,
 			q,
 		)
+	})
+
+	t.Run("pretty printed", func(t *testing.T) {
+		var films = qrb.N("films")
+
+		q := qrb.
+			InsertInto(films).
+			ColumnNames("code", "date_prod", "did", "kind", "length", "title").
+			Values(qrb.String("UA502"), qrb.String("1971-07-13"), qrb.Int(105), qrb.String("Comedy"), qrb.String("82 minutes"), qrb.String("Bananas")).
+			Values(qrb.String("T_601"), qrb.String("1962-12-10"), qrb.Int(106), qrb.String("Drama"), qrb.String("227 minutes"), qrb.String("Lawrence of Arabia"))
+
+		sql, _, err := qrb.Build(q).PrettyPrint().ToSQL()
+		require.NoError(t, err)
+
+		assert.Equal(t, `INSERT INTO films (code, date_prod, did, kind, length, title)
+VALUES ('UA502', '1971-07-13', 105, 'Comedy', '82 minutes', 'Bananas'),
+       ('T_601', '1962-12-10', 106, 'Drama', '227 minutes', 'Lawrence of Arabia')`, sql)
 	})
 }

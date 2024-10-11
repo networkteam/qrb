@@ -34,3 +34,11 @@ func (b *QueryBuilder) WithoutValidation() *QueryBuilder {
 	b.opts.validating = false
 	return b
 }
+
+// PrettyPrint indents the generated SQL for better readability.
+//
+// Note: For now this only has an effect for insert statements.
+func (b *QueryBuilder) PrettyPrint() *QueryBuilder {
+	b.opts.prettyPrint = true
+	return b
+}

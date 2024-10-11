@@ -56,7 +56,8 @@ type SQLBuilder struct {
 }
 
 type sqlBuilderOpts struct {
-	validating bool
+	validating  bool
+	prettyPrint bool
 }
 
 func newSqlBuilder(opts sqlBuilderOpts) *SQLBuilder {

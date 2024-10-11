@@ -267,6 +267,9 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 		for i, columnName := range b.columnNames {
 			if i > 0 {
 				sb.WriteString(",")
+				if sb.opts.prettyPrint {
+					sb.WriteRune(' ')
+				}
 			}
 			sb.WriteString(columnName)
 		}
@@ -280,15 +283,26 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 		sb.WriteString(" ")
 		b.query.innerWriteSQL(sb)
 	} else if b.valueLists != nil {
-		sb.WriteString(" VALUES ")
+		if sb.opts.prettyPrint {
+			sb.WriteRune('\n')
+		} else {
+			sb.WriteRune(' ')
+		}
+		sb.WriteString("VALUES ")
 		for i, valueList := range b.valueLists {
 			if i > 0 {
 				sb.WriteString(",")
+				if sb.opts.prettyPrint {
+					sb.WriteString("\n       ")
+				}
 			}
 			sb.WriteString("(")
 			for j, value := range valueList {
 				if j > 0 {
 					sb.WriteString(",")
+					if sb.opts.prettyPrint {
+						sb.WriteRune(' ')
+					}
 				}
 				value.WriteSQL(sb)
 			}
@@ -299,7 +313,12 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 	}
 
 	if b.conflictAction != "" {
-		sb.WriteString(" ON CONFLICT")
+		if sb.opts.prettyPrint {
+			sb.WriteRune('\n')
+		} else {
+			sb.WriteRune(' ')
+		}
+		sb.WriteString("ON CONFLICT")
 		if b.conflictConstraintName != "" && len(b.conflictTargets) > 0 {
 			sb.AddError(ErrInsertConflictConstraintAndTarget)
 			return
@@ -326,7 +345,12 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 		sb.WriteString(b.conflictAction)
 		if b.conflictAction == "DO UPDATE" {
 			if len(b.conflictDoUpdateSetItems) > 0 {
-				sb.WriteString(" SET ")
+				if sb.opts.prettyPrint {
+					sb.WriteString("\n    ")
+				} else {
+					sb.WriteRune(' ')
+				}
+				sb.WriteString("SET ")
 				for i, item := range b.conflictDoUpdateSetItems {
 					if i > 0 {
 						sb.WriteString(",")
@@ -337,7 +361,12 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 				}
 			}
 			if len(b.conflictDoUpdateWhereConjunction) > 0 {
-				sb.WriteString(" WHERE ")
+				if sb.opts.prettyPrint {
+					sb.WriteRune('\n')
+				} else {
+					sb.WriteRune(' ')
+				}
+				sb.WriteString("WHERE ")
 				And(b.conflictDoUpdateWhereConjunction...).WriteSQL(sb)
 			}
 		}
