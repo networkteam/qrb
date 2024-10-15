@@ -884,6 +884,10 @@ func writeSelectParts(sb *SQLBuilder, parts selectQueryParts) {
 	}
 	if parts.selectJson != nil {
 		parts.selectJson.WriteSQL(sb)
+		if parts.selectJsonAlias != "" {
+			sb.WriteString(" AS ")
+			sb.WriteString(parts.selectJsonAlias)
+		}
 		if len(parts.selectList) > 0 {
 			sb.WriteString(",")
 		}

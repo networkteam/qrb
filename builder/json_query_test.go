@@ -39,4 +39,21 @@ func TestJsonQuery(t *testing.T) {
 			withPostCount,
 		)
 	})
+
+	t.Run("select json object with alias", func(t *testing.T) {
+		b := qrb.SelectJson(
+			fn.JsonBuildObject().
+				Prop("id", qrb.N("authors.author_id")).
+				Prop("name", qrb.N("authors.name")),
+		).As("myjson").
+			From(qrb.N("authors")).
+			Where(qrb.N("authors.author_id").Eq(qrb.Arg(123)))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			"SELECT json_build_object('id',authors.author_id,'name',authors.name) AS myjson FROM authors WHERE authors.author_id = $1",
+			[]any{123},
+			b,
+		)
+	})
 }
