@@ -143,7 +143,7 @@ func (b WithBuilder) Select(exps ...Exp) SelectSelectBuilder {
 }
 
 // InsertInto starts a new InsertBuilder following the with clause.
-func (b WithBuilder) InsertInto(tableName IdentExp) InsertBuilder {
+func (b WithBuilder) InsertInto(tableName Identer) InsertBuilder {
 	return InsertBuilder{
 		withQueries: b.withQueries,
 		tableName:   tableName,
@@ -151,7 +151,7 @@ func (b WithBuilder) InsertInto(tableName IdentExp) InsertBuilder {
 }
 
 // Update starts a new UpdateBuilder following the with clause.
-func (b WithBuilder) Update(tableName IdentExp) UpdateBuilder {
+func (b WithBuilder) Update(tableName Identer) UpdateBuilder {
 	return UpdateBuilder{
 		withQueries: b.withQueries,
 		tableName:   tableName,
@@ -159,7 +159,7 @@ func (b WithBuilder) Update(tableName IdentExp) UpdateBuilder {
 }
 
 // DeleteFrom starts a new DeleteBuilder following the with clause.
-func (b WithBuilder) DeleteFrom(tableName IdentExp) DeleteBuilder {
+func (b WithBuilder) DeleteFrom(tableName Identer) DeleteBuilder {
 	return DeleteBuilder{
 		withQueries: b.withQueries,
 		tableName:   tableName,

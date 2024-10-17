@@ -182,7 +182,27 @@ func TestInsertBuilder(t *testing.T) {
 			)
 		})
 
+		t.Run("example 8 - multiple returning", func(t *testing.T) {
+			q := qrb.
+				InsertInto(qrb.N("distributors")).
+				ColumnNames("did", "dname").
+				Values(qrb.Default(), qrb.String("XYZ Widgets")).
+				Returning(qrb.N("did"), qrb.N("dname"))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				`
+				INSERT INTO distributors (did, dname) VALUES (DEFAULT, 'XYZ Widgets')
+   					RETURNING did, dname
+				`,
+				nil,
+				q,
+			)
+		})
+
 		t.Run("example 9", func(t *testing.T) {
+			var employeesLog builder.Identer = qrb.N("employees_log")
+
 			q := qrb.
 				With("upd").As(
 				qrb.Update(qrb.N("employees")).
@@ -192,7 +212,7 @@ func TestInsertBuilder(t *testing.T) {
 					)).
 					Returning(qrb.N("*")),
 			).
-				InsertInto(qrb.N("employees_log")).
+				InsertInto(employeesLog).
 				Query(qrb.Select(qrb.N("*"), qrb.N("current_timestamp")).From(qrb.N("upd")))
 
 			testhelper.AssertSQLWriterEquals(

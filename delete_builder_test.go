@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/networkteam/qrb"
+	"github.com/networkteam/qrb/builder"
 	"github.com/networkteam/qrb/fn"
 	"github.com/networkteam/qrb/internal/testhelper"
 )
@@ -101,11 +102,13 @@ func TestDeleteBuilder(t *testing.T) {
 	t.Run("with", func(t *testing.T) {
 		// Example borrowed from https://stackoverflow.com/a/37225172/749191
 
+		var listens builder.Identer = qrb.N("listens")
+
 		q := qrb.
 			With("max_table").As(
 			qrb.Select(qrb.N("uid")).Select(fn.Max(qrb.N("ts")).Minus(qrb.Int(10000))).As("mx").From(qrb.N("listens")).GroupBy(qrb.N("uid")),
 		).
-			DeleteFrom(qrb.N("listens")).
+			DeleteFrom(listens).
 			Where(qrb.N("ts").Lt(qrb.Select(qrb.N("mx")).From(qrb.N("max_table")).Where(qrb.N("max_table.uid").Eq(qrb.N("listens.uid")))))
 
 		testhelper.AssertSQLWriterEquals(

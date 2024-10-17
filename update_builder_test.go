@@ -80,6 +80,8 @@ func TestUpdateBuilder(t *testing.T) {
 	t.Run("with", func(t *testing.T) {
 		// Example borrowed from https://medium.com/@mnu/update-a-postgresql-table-using-a-with-query-648eefaae2a6
 
+		var journeyPatterns builder.Identer = qrb.N("journey_patterns")
+
 		q := qrb.With("line_journey_pattern").As(
 			qrb.Select(qrb.N("jp.id")).As("journey_pattern_id").
 				Select(qrb.N("l.name")).As("line_name").
@@ -90,7 +92,7 @@ func TestUpdateBuilder(t *testing.T) {
 					qrb.N("l.name").IsNotNull(),
 					qrb.N("l.name").Neq(qrb.String("")),
 				)),
-		).Update(qrb.N("journey_patterns")).As("jp").
+		).Update(journeyPatterns).As("jp").
 			Set("name", qrb.N("ljp.line_name").Concat(qrb.String(" - ")).Concat(qrb.N("jp.name"))).
 			From(qrb.N("line_journey_pattern")).As("ljp").
 			Where(qrb.N("ljp.journey_pattern_id").Eq(qrb.N("jp.id")))

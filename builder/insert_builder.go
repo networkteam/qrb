@@ -187,13 +187,18 @@ type conflictTarget struct {
 	exp Exp
 }
 
-func (b InsertBuilder) Returning(outputExpression Exp) ReturningInsertBuilder {
+func (b InsertBuilder) Returning(outputExpression Exp, exps ...Exp) ReturningInsertBuilder {
 	newBuilder := b
-	newBuilder.returningItems = b.returningItems.cloneSlice(1)
+	newBuilder.returningItems = b.returningItems.cloneSlice(1 + len(exps))
 
 	newBuilder.returningItems = append(newBuilder.returningItems, returningItem{
 		outputExpression: outputExpression,
 	})
+	for _, exp := range exps {
+		newBuilder.returningItems = append(newBuilder.returningItems, returningItem{
+			outputExpression: exp,
+		})
+	}
 
 	return ReturningInsertBuilder{newBuilder}
 }
