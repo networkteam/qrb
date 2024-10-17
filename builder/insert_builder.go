@@ -35,6 +35,8 @@ type InsertBuilder struct {
 	returningItems                   returningItems
 }
 
+func (b InsertBuilder) isWithQuery() {}
+
 func (b InsertBuilder) As(alias string) InsertBuilder {
 	newBuilder := b
 	newBuilder.alias = alias
