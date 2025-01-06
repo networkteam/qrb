@@ -3,6 +3,7 @@ package qrb_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/networkteam/qrb"
@@ -1175,5 +1176,17 @@ func TestSelectBuilder_For(t *testing.T) {
 			SelectBuilder
 
 		testhelper.AssertSQLWriterEquals(t, "SELECT foo FROM bar FOR KEY SHARE OF table1,table2 SKIP LOCKED", nil, q)
+	})
+}
+
+func TestSelectBuilder_IsEmpty(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		query := builder.SelectBuilder{}
+		assert.Equal(t, true, query.IsEmpty())
+	})
+
+	t.Run("not empty", func(t *testing.T) {
+		query := qrb.Select(qrb.N("foo")).From(qrb.N("bar")).SelectBuilder
+		assert.Equal(t, false, query.IsEmpty())
 	})
 }

@@ -42,6 +42,12 @@ type selectQueryParts struct {
 	lockingClause     lockingClause
 }
 
+func (p selectQueryParts) isEmpty() bool {
+	return !p.distinct && len(p.selectList) == 0 && p.selectJson == nil && len(p.from) == 0 && len(p.whereConjunction) == 0 &&
+		len(p.groupBys) == 0 && len(p.havingConjunction) == 0 && len(p.orderBys) == 0 && p.limit == nil && p.offset == nil &&
+		p.lockingClause.lockStrength == ""
+}
+
 type lockingClause struct {
 	lockStrength string
 	ofTables     []string
@@ -949,4 +955,8 @@ func (b SelectBuilder) ApplyIf(cond bool, apply func(q SelectBuilder) SelectBuil
 		return apply(b)
 	}
 	return b
+}
+
+func (b SelectBuilder) IsEmpty() bool {
+	return len(b.withQueries) == 0 && len(b.combinations) == 0 && b.parts.isEmpty()
 }
