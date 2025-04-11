@@ -35,6 +35,25 @@ package builder
 // TODO Add frame_clause
 // TODO Re-use windowDefinition to build the SQL
 
+// WindowFuncBuilder is the base builder for a window function (e.g. row_number()).
+type WindowFuncBuilder struct {
+	// FuncCall is the base function / aggregate call
+	FuncCall Exp
+}
+
+func (b WindowFuncBuilder) Over(existingWindowName ...string) WindowFuncCallBuilder {
+	if len(existingWindowName) > 0 {
+		return WindowFuncCallBuilder{
+			FuncCall:           b.FuncCall,
+			existingWindowName: existingWindowName[0],
+		}
+	}
+
+	return WindowFuncCallBuilder{
+		FuncCall: b.FuncCall,
+	}
+}
+
 type WindowFuncCallBuilder struct {
 	// FuncCall is the base function / aggregate call
 	FuncCall           Exp
