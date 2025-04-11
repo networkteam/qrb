@@ -159,3 +159,14 @@ func (b AggExpBuilder) WriteSQL(sb *SQLBuilder) {
 		sb.WriteRune(')')
 	}
 }
+
+func (b AggExpBuilder) Over(windowName ...string) WindowFuncCallBuilder {
+	var existingWindowName string
+	if len(windowName) > 0 {
+		existingWindowName = windowName[0]
+	}
+	return WindowFuncCallBuilder{
+		FuncCall:           b,
+		existingWindowName: existingWindowName,
+	}
+}

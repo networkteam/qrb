@@ -36,6 +36,7 @@ type selectQueryParts struct {
 	groupByDistinct   bool
 	groupBys          []groupingElement
 	havingConjunction []Exp
+	windowDefinitions []windowDefinition
 	orderBys          []orderByClause
 	limit             Exp
 	offset            Exp
@@ -686,6 +687,169 @@ func (e groupingElement) writeSet(sb *SQLBuilder, exps []Exp) {
 	sb.WriteString(")")
 }
 
+// WINDOW clause
+
+// [ WINDOW window_name AS ( window_definition ) [, ...] ]
+
+func (b SelectBuilder) Window(name string) WindowSelectBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.parts.windowDefinitions, b.parts.windowDefinitions, 1)
+
+	newBuilder.parts.windowDefinitions = append(newBuilder.parts.windowDefinitions, windowDefinition{
+		name: name,
+	})
+
+	return WindowSelectBuilder{
+		SelectBuilder: newBuilder,
+	}
+}
+
+type WindowSelectBuilder struct {
+	SelectBuilder
+}
+
+type windowDefinition struct {
+	name               string
+	existingWindowName string
+	partitionBy        []Exp
+	orderBys           []orderByClause
+}
+
+func (d windowDefinition) WriteSQL(sb *SQLBuilder) {
+	sb.WriteString(d.name)
+	sb.WriteString(" AS ")
+	sb.WriteString("(")
+	hasContent := false
+	if d.existingWindowName != "" {
+		sb.WriteString(d.existingWindowName)
+		hasContent = true
+	}
+	if len(d.partitionBy) > 0 {
+		if hasContent {
+			sb.WriteRune(' ')
+		}
+		sb.WriteString("PARTITION BY ")
+		for i, exp := range d.partitionBy {
+			if i > 0 {
+				sb.WriteRune(',')
+			}
+			exp.WriteSQL(sb)
+		}
+		hasContent = true
+	}
+	if len(d.orderBys) > 0 {
+		if hasContent {
+			sb.WriteRune(' ')
+		}
+		sb.WriteString("ORDER BY ")
+		for i, clause := range d.orderBys {
+			if i > 0 {
+				sb.WriteRune(',')
+			}
+			clause.WriteSQL(sb)
+		}
+	}
+	sb.WriteString(")")
+}
+
+func (b WindowSelectBuilder) As(existingWindowName ...string) WindowSelectBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.parts.windowDefinitions, b.parts.windowDefinitions, 0)
+
+	if len(existingWindowName) > 0 {
+		newBuilder.parts.windowDefinitions[len(newBuilder.parts.windowDefinitions)-1].existingWindowName = existingWindowName[0]
+	}
+
+	return newBuilder
+}
+
+func (b WindowSelectBuilder) PartitionBy(exp Exp, exps ...Exp) WindowSelectBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.parts.windowDefinitions, b.parts.windowDefinitions, 0)
+
+	lastIdx := len(newBuilder.parts.windowDefinitions) - 1
+	newDef := newBuilder.parts.windowDefinitions[lastIdx]
+	cloneSlice(&newDef.partitionBy, newBuilder.parts.windowDefinitions[lastIdx].partitionBy, 1+len(exps))
+
+	newDef.partitionBy = append(newDef.partitionBy, exp)
+	newDef.partitionBy = append(newDef.partitionBy, exps...)
+
+	newBuilder.parts.windowDefinitions[lastIdx] = newDef
+
+	return newBuilder
+}
+
+func (b WindowSelectBuilder) OrderBy(exp Exp) OrderByWindowSelectBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.parts.windowDefinitions, b.parts.windowDefinitions, 0)
+
+	lastIdx := len(newBuilder.parts.windowDefinitions) - 1
+	newDef := newBuilder.parts.windowDefinitions[lastIdx]
+	cloneSlice(&newDef.orderBys, newBuilder.parts.windowDefinitions[lastIdx].orderBys, 1)
+
+	newDef.orderBys = append(newDef.orderBys, orderByClause{
+		exp: exp,
+	})
+
+	newBuilder.parts.windowDefinitions[lastIdx] = newDef
+
+	return OrderByWindowSelectBuilder{
+		WindowSelectBuilder: newBuilder,
+	}
+}
+
+type OrderByWindowSelectBuilder struct {
+	WindowSelectBuilder
+}
+
+func (b OrderByWindowSelectBuilder) Asc() OrderByWindowSelectBuilder {
+	return b.setOrder(sortOrderAsc)
+}
+
+func (b OrderByWindowSelectBuilder) Desc() OrderByWindowSelectBuilder {
+	return b.setOrder(sortOrderDesc)
+}
+
+func (b OrderByWindowSelectBuilder) setOrder(order sortOrder) OrderByWindowSelectBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.parts.windowDefinitions, b.parts.windowDefinitions, 0)
+
+	lastDefIdx := len(newBuilder.parts.windowDefinitions) - 1
+	newDef := newBuilder.parts.windowDefinitions[lastDefIdx]
+	cloneSlice(&newDef.orderBys, newBuilder.parts.windowDefinitions[lastDefIdx].orderBys, 0)
+
+	lastIdx := len(newDef.orderBys) - 1
+	newDef.orderBys[lastIdx].order = order
+
+	newBuilder.parts.windowDefinitions[lastDefIdx] = newDef
+
+	return newBuilder
+}
+
+func (b OrderByWindowSelectBuilder) NullsFirst() OrderByWindowSelectBuilder {
+	return b.setNulls(sortNullsFirst)
+}
+
+func (b OrderByWindowSelectBuilder) NullsLast() OrderByWindowSelectBuilder {
+	return b.setNulls(sortNullsLast)
+}
+
+func (b OrderByWindowSelectBuilder) setNulls(nulls sortNulls) OrderByWindowSelectBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.parts.windowDefinitions, b.parts.windowDefinitions, 0)
+
+	lastDefIdx := len(newBuilder.parts.windowDefinitions) - 1
+	newDef := newBuilder.parts.windowDefinitions[lastDefIdx]
+	cloneSlice(&newDef.orderBys, newBuilder.parts.windowDefinitions[lastDefIdx].orderBys, 0)
+
+	lastIdx := len(newDef.orderBys) - 1
+	newDef.orderBys[lastIdx].nulls = nulls
+
+	newBuilder.parts.windowDefinitions[lastDefIdx] = newDef
+
+	return newBuilder
+}
+
 // HAVING condition
 
 // Having adds a HAVING condition to the query.
@@ -697,8 +861,6 @@ func (b SelectBuilder) Having(cond Exp) SelectBuilder {
 	newBuilder.parts.havingConjunction = append(newBuilder.parts.havingConjunction, cond)
 	return newBuilder
 }
-
-// TODO: [ WINDOW window_name AS ( window_definition ) [, ...] ]
 
 // select_statement UNION [ ALL | DISTINCT ] select_statement
 // select_statement INTERSECT [ ALL | DISTINCT ] select_statement
@@ -944,6 +1106,16 @@ func writeSelectParts(sb *SQLBuilder, parts selectQueryParts) {
 	if len(parts.havingConjunction) > 0 {
 		sb.WriteString(" HAVING ")
 		And(parts.havingConjunction...).WriteSQL(sb)
+	}
+
+	if len(parts.windowDefinitions) > 0 {
+		sb.WriteString(" WINDOW ")
+		for i, windowDef := range parts.windowDefinitions {
+			if i > 0 {
+				sb.WriteString(",")
+			}
+			windowDef.WriteSQL(sb)
+		}
 	}
 }
 
