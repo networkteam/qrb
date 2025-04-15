@@ -136,4 +136,26 @@ func TestWindowFuncBuilder(t *testing.T) {
 			b,
 		)
 	})
+
+	t.Run("Example 6 variant 1", func(t *testing.T) {
+		b := Select(
+			fn.Sum(N("salary")).Over("w"),
+			fn.Avg(N("salary")).Over("w"),
+			fn.RowNumber().Over("w"),
+		).
+			From(N("empsalary")).
+			Window("w").As().PartitionBy(N("depname")).OrderBy(N("salary")).Desc().
+			SelectBuilder
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			SELECT sum(salary) OVER w, avg(salary) OVER w, row_number() OVER w
+			  FROM empsalary
+			  WINDOW w AS (PARTITION BY depname ORDER BY salary DESC)
+			`,
+			nil,
+			b,
+		)
+	})
 }
