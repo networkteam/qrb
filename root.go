@@ -42,7 +42,7 @@ func SelectJson(obj builder.JsonBuildObjectBuilder) builder.SelectJsonSelectBuil
 }
 
 // Agg builds an aggregate function expression.
-func Agg(name string, exps []builder.Exp) builder.AggExpBuilder {
+func Agg(name string, exps []builder.Exp) builder.AggBuilder {
 	return builder.Agg(name, exps)
 }
 

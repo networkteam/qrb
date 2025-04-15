@@ -1,6 +1,6 @@
 package builder
 
-type AggExpBuilder struct {
+type AggBuilder struct {
 	ExpBase
 
 	name               string
@@ -11,12 +11,12 @@ type AggExpBuilder struct {
 	withinGroupOrderBy bool
 }
 
-type OrderByAggExpBuilder struct {
-	AggExpBuilder
+type OrderByAggBuilder struct {
+	AggBuilder
 }
 
-func Agg(name string, exps []Exp) AggExpBuilder {
-	exp := AggExpBuilder{
+func Agg(name string, exps []Exp) AggBuilder {
+	exp := AggBuilder{
 		name: name,
 		exps: exps,
 	}
@@ -28,11 +28,11 @@ func Agg(name string, exps []Exp) AggExpBuilder {
 // aggregate_name (DISTINCT expression [ , ... ] [ order_by_clause ] ) [ FILTER ( WHERE filter_clause ) ]
 // aggregate_name ( [ expression [ , ... ] ] ) WITHIN GROUP ( order_by_clause ) [ FILTER ( WHERE filter_clause ) ]
 
-var _ Exp = AggExpBuilder{}
+var _ Exp = AggBuilder{}
 
-func (b AggExpBuilder) IsExp() {}
+func (b AggBuilder) IsExp() {}
 
-func (b AggExpBuilder) Distinct() AggExpBuilder {
+func (b AggBuilder) Distinct() AggBuilder {
 	newBuilder := b
 
 	newBuilder.distinct = true
@@ -44,8 +44,8 @@ func (b AggExpBuilder) Distinct() AggExpBuilder {
 // [ ORDER BY expression [ ASC | DESC | USING operator ] [ NULLS { FIRST | LAST } ] [, ...] ]
 
 // OrderBy adds an ORDER BY clause to the aggregate function.
-// If AggExpBuilder.WithinGroup is called, the ORDER BY clause is used after the aggregate function in WITHIN GROUP.
-func (b AggExpBuilder) OrderBy(exp Exp) OrderByAggExpBuilder {
+// If AggBuilder.WithinGroup is called, the ORDER BY clause is used after the aggregate function in WITHIN GROUP.
+func (b AggBuilder) OrderBy(exp Exp) OrderByAggBuilder {
 	newBuilder := b
 	cloneSlice(&newBuilder.orderBys, b.orderBys, 1)
 
@@ -54,20 +54,20 @@ func (b AggExpBuilder) OrderBy(exp Exp) OrderByAggExpBuilder {
 	})
 
 	newBuilder.Exp = newBuilder // self-reference for base methods
-	return OrderByAggExpBuilder{
-		AggExpBuilder: newBuilder,
+	return OrderByAggBuilder{
+		AggBuilder: newBuilder,
 	}
 }
 
-func (b OrderByAggExpBuilder) Asc() OrderByAggExpBuilder {
+func (b OrderByAggBuilder) Asc() OrderByAggBuilder {
 	return b.setOrder(sortOrderAsc)
 }
 
-func (b OrderByAggExpBuilder) Desc() OrderByAggExpBuilder {
+func (b OrderByAggBuilder) Desc() OrderByAggBuilder {
 	return b.setOrder(sortOrderDesc)
 }
 
-func (b OrderByAggExpBuilder) setOrder(order sortOrder) OrderByAggExpBuilder {
+func (b OrderByAggBuilder) setOrder(order sortOrder) OrderByAggBuilder {
 	newBuilder := b
 	cloneSlice(&newBuilder.orderBys, b.orderBys, 0)
 
@@ -78,15 +78,15 @@ func (b OrderByAggExpBuilder) setOrder(order sortOrder) OrderByAggExpBuilder {
 	return newBuilder
 }
 
-func (b OrderByAggExpBuilder) NullsFirst() OrderByAggExpBuilder {
+func (b OrderByAggBuilder) NullsFirst() OrderByAggBuilder {
 	return b.setNulls(sortNullsFirst)
 }
 
-func (b OrderByAggExpBuilder) NullsLast() OrderByAggExpBuilder {
+func (b OrderByAggBuilder) NullsLast() OrderByAggBuilder {
 	return b.setNulls(sortNullsLast)
 }
 
-func (b OrderByAggExpBuilder) setNulls(nulls sortNulls) OrderByAggExpBuilder {
+func (b OrderByAggBuilder) setNulls(nulls sortNulls) OrderByAggBuilder {
 	newBuilder := b
 	cloneSlice(&newBuilder.orderBys, b.orderBys, 0)
 
@@ -98,7 +98,7 @@ func (b OrderByAggExpBuilder) setNulls(nulls sortNulls) OrderByAggExpBuilder {
 
 // Filter adds a filter to the aggregate function.
 // Multiple calls to Filter are joined with AND.
-func (b AggExpBuilder) Filter(cond Exp) AggExpBuilder {
+func (b AggBuilder) Filter(cond Exp) AggBuilder {
 	newBuilder := b
 	cloneSlice(&newBuilder.filterConjunction, b.filterConjunction, 1)
 
@@ -109,8 +109,8 @@ func (b AggExpBuilder) Filter(cond Exp) AggExpBuilder {
 }
 
 // WithinGroup adds a WITHIN GROUP order by clause after the aggregate function.
-// Sort arguments are added via AggExpBuilder.OrderBy.
-func (b AggExpBuilder) WithinGroup() AggExpBuilder {
+// Sort arguments are added via AggBuilder.OrderBy.
+func (b AggBuilder) WithinGroup() AggBuilder {
 	newBuilder := b
 
 	newBuilder.withinGroupOrderBy = true
@@ -119,7 +119,7 @@ func (b AggExpBuilder) WithinGroup() AggExpBuilder {
 	return newBuilder
 }
 
-func (b AggExpBuilder) WriteSQL(sb *SQLBuilder) {
+func (b AggBuilder) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(b.name)
 	sb.WriteRune('(')
 	if b.distinct {
@@ -160,7 +160,7 @@ func (b AggExpBuilder) WriteSQL(sb *SQLBuilder) {
 	}
 }
 
-func (b AggExpBuilder) Over(windowName ...string) WindowFuncCallBuilder {
+func (b AggBuilder) Over(windowName ...string) WindowFuncCallBuilder {
 	var existingWindowName string
 	if len(windowName) > 0 {
 		existingWindowName = windowName[0]

@@ -1,5 +1,6 @@
 package builder
 
+// FuncExp is a simple function call expression
 func FuncExp(name string, args []Exp) ExpBase {
 	return ExpBase{
 		Exp: funcExp{

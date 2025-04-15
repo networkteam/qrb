@@ -111,7 +111,7 @@ func JsonbArrayElements(exp builder.Exp) builder.ExpBase {
 //
 // Expands the top-level JSON array into a set of text values.
 func JsonArrayElementsText(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp(" json_array_elements_text", []builder.Exp{exp})
+	return builder.FuncExp("json_array_elements_text", []builder.Exp{exp})
 }
 
 // JsonbArrayElementsText builds the jsonb_array_elements_text function.
@@ -120,7 +120,7 @@ func JsonArrayElementsText(exp builder.Exp) builder.ExpBase {
 //
 // Expands the top-level JSON array into a set of text values.
 func JsonbArrayElementsText(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("  jsonb_array_elements_text", []builder.Exp{exp})
+	return builder.FuncExp("jsonb_array_elements_text", []builder.Exp{exp})
 }
 
 // JsonArrayLength builds the json_array_length function.
@@ -129,7 +129,7 @@ func JsonbArrayElementsText(exp builder.Exp) builder.ExpBase {
 //
 // Returns the number of elements in the top-level JSON array.
 func JsonArrayLength(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("  json_array_length", []builder.Exp{exp})
+	return builder.FuncExp("json_array_length", []builder.Exp{exp})
 }
 
 // JsonbArrayLength builds the jsonb_array_length function.
@@ -138,7 +138,7 @@ func JsonArrayLength(exp builder.Exp) builder.ExpBase {
 //
 // Returns the number of elements in the top-level JSON array.
 func JsonbArrayLength(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("   jsonb_array_length", []builder.Exp{exp})
+	return builder.FuncExp("jsonb_array_length", []builder.Exp{exp})
 }
 
 // JsonEach builds the json_each function.

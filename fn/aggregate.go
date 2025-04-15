@@ -15,7 +15,7 @@ import (
 //	array_agg ( anyarray ) → anyarray
 //
 // Concatenates all the input arrays into an array of one higher dimension.
-func ArrayAgg(exp builder.Exp) builder.AggExpBuilder {
+func ArrayAgg(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("array_agg", []builder.Exp{exp})
 }
 
@@ -24,7 +24,7 @@ func ArrayAgg(exp builder.Exp) builder.AggExpBuilder {
 //	avg ( T ) → T
 //
 // Computes the average (arithmetic mean) of all the non-null input values.
-func Avg(exp builder.Exp) builder.AggExpBuilder {
+func Avg(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("avg", []builder.Exp{exp})
 }
 
@@ -33,7 +33,7 @@ func Avg(exp builder.Exp) builder.AggExpBuilder {
 //	bit_and ( T ) → T
 //
 // Computes the bitwise AND of all non-null input values.
-func BitAnd(exp builder.Exp) builder.AggExpBuilder {
+func BitAnd(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("bit_and", []builder.Exp{exp})
 }
 
@@ -42,7 +42,7 @@ func BitAnd(exp builder.Exp) builder.AggExpBuilder {
 //	bit_or ( T ) → T
 //
 // Computes the bitwise OR of all non-null input values.
-func BitOr(exp builder.Exp) builder.AggExpBuilder {
+func BitOr(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("bit_or", []builder.Exp{exp})
 }
 
@@ -51,7 +51,7 @@ func BitOr(exp builder.Exp) builder.AggExpBuilder {
 //	bit_xor ( T ) → T
 //
 // Computes the bitwise exclusive OR of all non-null input values. Can be useful as a checksum for an unordered set of values.
-func BitXor(exp builder.Exp) builder.AggExpBuilder {
+func BitXor(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("bit_xor", []builder.Exp{exp})
 }
 
@@ -60,7 +60,7 @@ func BitXor(exp builder.Exp) builder.AggExpBuilder {
 //	bool_and ( boolean ) → boolean
 //
 // Returns true if all non-null input values are true, otherwise false.
-func BoolAnd(exp builder.Exp) builder.AggExpBuilder {
+func BoolAnd(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("bool_and", []builder.Exp{exp})
 }
 
@@ -69,7 +69,7 @@ func BoolAnd(exp builder.Exp) builder.AggExpBuilder {
 //	bool_or ( boolean ) → boolean
 //
 // Returns true if any non-null input value is true, otherwise false.
-func BoolOr(exp builder.Exp) builder.AggExpBuilder {
+func BoolOr(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("bool_or", []builder.Exp{exp})
 }
 
@@ -86,7 +86,7 @@ func BoolOr(exp builder.Exp) builder.AggExpBuilder {
 // Example:
 //
 //	builder.Select(fn.Count(builder.N("*"))).From("table")
-func Count(exp builder.Exp) builder.AggExpBuilder {
+func Count(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("count", []builder.Exp{exp})
 }
 
@@ -95,7 +95,7 @@ func Count(exp builder.Exp) builder.AggExpBuilder {
 //	json_agg ( anyelement ) → json
 //
 // Collects all the input values, including nulls, into a JSON array. Values are converted to JSON as per to_json.
-func JsonAgg(exp builder.Exp) builder.AggExpBuilder {
+func JsonAgg(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("json_agg", []builder.Exp{exp})
 }
 
@@ -104,7 +104,7 @@ func JsonAgg(exp builder.Exp) builder.AggExpBuilder {
 //	jsonb_agg ( anyelement ) → jsonb
 //
 // Collects all the input values, including nulls, into a JSON array. Values are converted to JSON as per to_jsonb.
-func JsonbAgg(exp builder.Exp) builder.AggExpBuilder {
+func JsonbAgg(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("jsonb_agg", []builder.Exp{exp})
 }
 
@@ -113,7 +113,7 @@ func JsonbAgg(exp builder.Exp) builder.AggExpBuilder {
 //	json_object_agg ( key "any", value "any" ) → json
 //
 // Collects all the key/value pairs into a JSON object. Key arguments are coerced to text; value arguments are converted as per to_json. Values can be null, but not keys.
-func JsonObjectAgg(key, value builder.Exp) builder.AggExpBuilder {
+func JsonObjectAgg(key, value builder.Exp) builder.AggBuilder {
 	return builder.Agg("json_object_agg", []builder.Exp{key, value})
 }
 
@@ -122,7 +122,7 @@ func JsonObjectAgg(key, value builder.Exp) builder.AggExpBuilder {
 //	jsonb_object_agg ( key "any", value "any" ) → jsonb
 //
 // Collects all the key/value pairs into a JSON object. Key arguments are coerced to text; value arguments are converted as per to_jsonb. Values can be null, but not keys.
-func JsonbObjectAgg(key, value builder.Exp) builder.AggExpBuilder {
+func JsonbObjectAgg(key, value builder.Exp) builder.AggBuilder {
 	return builder.Agg("jsonb_object_agg", []builder.Exp{key, value})
 }
 
@@ -132,7 +132,7 @@ func JsonbObjectAgg(key, value builder.Exp) builder.AggExpBuilder {
 //	string_agg ( value bytea, delimiter bytea ) → bytea
 //
 // Concatenates the non-null input values into a string. Each value after the first is preceded by the corresponding delimiter (if it's not null).
-func StringAgg(value, delimiter builder.Exp) builder.AggExpBuilder {
+func StringAgg(value, delimiter builder.Exp) builder.AggBuilder {
 	return builder.Agg("string_agg", []builder.Exp{value, delimiter})
 }
 
@@ -141,7 +141,7 @@ func StringAgg(value, delimiter builder.Exp) builder.AggExpBuilder {
 //	max ( see text ) → same as input type
 //
 // Computes the maximum of the non-null input values. Available for any numeric, string, date/time, or enum type, as well as inet, interval, money, oid, pg_lsn, tid, xid8, and arrays of any of these types.
-func Max(exp builder.Exp) builder.AggExpBuilder {
+func Max(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("max", []builder.Exp{exp})
 }
 
@@ -150,7 +150,7 @@ func Max(exp builder.Exp) builder.AggExpBuilder {
 //	min ( see text ) → same as input type
 //
 // Computes the minimum of the non-null input values. Available for any numeric, string, date/time, or enum type, as well as inet, interval, money, oid, pg_lsn, tid, xid8, and arrays of any of these types.
-func Min(exp builder.Exp) builder.AggExpBuilder {
+func Min(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("min", []builder.Exp{exp})
 }
 
@@ -160,7 +160,7 @@ func Min(exp builder.Exp) builder.AggExpBuilder {
 //	range_agg ( value anymultirange ) → anymultirange
 //
 // Computes the union of the non-null input values.
-func RangeAgg(value builder.Exp) builder.AggExpBuilder {
+func RangeAgg(value builder.Exp) builder.AggBuilder {
 	return builder.Agg("range_agg", []builder.Exp{value})
 }
 
@@ -170,7 +170,7 @@ func RangeAgg(value builder.Exp) builder.AggExpBuilder {
 //	range_intersect_agg ( value anymultirange ) → anymultirange
 //
 // Computes the intersection of the non-null input values.
-func RangeIntersectAgg(value builder.Exp) builder.AggExpBuilder {
+func RangeIntersectAgg(value builder.Exp) builder.AggBuilder {
 	return builder.Agg("range_intersect_agg", []builder.Exp{value})
 }
 
@@ -179,7 +179,7 @@ func RangeIntersectAgg(value builder.Exp) builder.AggExpBuilder {
 //	sum ( T ) → T
 //
 // Computes the sum of the non-null input values.
-func Sum(exp builder.Exp) builder.AggExpBuilder {
+func Sum(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("sum", []builder.Exp{exp})
 }
 
@@ -188,7 +188,7 @@ func Sum(exp builder.Exp) builder.AggExpBuilder {
 //	xmlagg ( xml ) → xml
 //
 // Concatenates the non-null XML input values.
-func Xmlagg(exp builder.Exp) builder.AggExpBuilder {
+func Xmlagg(exp builder.Exp) builder.AggBuilder {
 	return builder.Agg("xmlagg", []builder.Exp{exp})
 }
 
@@ -201,7 +201,7 @@ func Xmlagg(exp builder.Exp) builder.AggExpBuilder {
 //	mode () WITHIN GROUP ( ORDER BY anyelement ) → anyelement
 //
 // Computes the mode, the most frequent value of the aggregated argument (arbitrarily choosing the first one if there are multiple equally-frequent values). The aggregated argument must be of a sortable type.
-func Mode() builder.AggExpBuilder {
+func Mode() builder.AggBuilder {
 	return builder.Agg("mode", nil)
 }
 
@@ -213,7 +213,7 @@ func Mode() builder.AggExpBuilder {
 //	percentile_cont ( fractions double precision[] ) WITHIN GROUP ( ORDER BY interval ) → interval[]
 //
 // Computes the continuous percentile, a value corresponding to the specified fraction within the ordered set of aggregated argument values. This will interpolate between adjacent input items if needed.
-func PercentileCont(fraction builder.Exp) builder.AggExpBuilder {
+func PercentileCont(fraction builder.Exp) builder.AggBuilder {
 	return builder.Agg("percentile_cont", []builder.Exp{fraction})
 }
 
@@ -226,7 +226,7 @@ func PercentileCont(fraction builder.Exp) builder.AggExpBuilder {
 //	percentile_disc ( fractions double precision[] ) WITHIN GROUP ( ORDER BY anyelement ) → anyarray
 //
 // Computes multiple discrete percentiles. The result is an array of the same dimensions as the fractions parameter, with each non-null element replaced by the input value corresponding to that percentile. The aggregated argument must be of a sortable type.
-func PercentileDisc(fraction builder.Exp) builder.AggExpBuilder {
+func PercentileDisc(fraction builder.Exp) builder.AggBuilder {
 	return builder.Agg("percentile_disc", []builder.Exp{fraction})
 }
 
@@ -237,7 +237,7 @@ func PercentileDisc(fraction builder.Exp) builder.AggExpBuilder {
 //	rank ( args ) WITHIN GROUP ( ORDER BY sorted_args ) → bigint
 //
 // Computes the rank of the hypothetical row, with gaps; that is, the row number of the first row in its peer group.
-func Rank(args ...builder.Exp) builder.AggExpBuilder {
+func Rank(args ...builder.Exp) builder.AggBuilder {
 	return builder.Agg("rank", args)
 }
 
@@ -246,7 +246,7 @@ func Rank(args ...builder.Exp) builder.AggExpBuilder {
 //	dense_rank ( args ) WITHIN GROUP ( ORDER BY sorted_args ) → bigint
 //
 // Computes the rank of the hypothetical row, without gaps; this function effectively counts peer groups.
-func DenseRank(args ...builder.Exp) builder.AggExpBuilder {
+func DenseRank(args ...builder.Exp) builder.AggBuilder {
 	return builder.Agg("dense_rank", args)
 }
 
@@ -255,7 +255,7 @@ func DenseRank(args ...builder.Exp) builder.AggExpBuilder {
 //	percent_rank ( args ) WITHIN GROUP ( ORDER BY sorted_args ) → double precision
 //
 // Computes the relative rank of the hypothetical row, that is (rank - 1) / (total rows - 1). The value thus ranges from 0 to 1 inclusive.
-func PercentRank(args ...builder.Exp) builder.AggExpBuilder {
+func PercentRank(args ...builder.Exp) builder.AggBuilder {
 	return builder.Agg("percent_rank", args)
 }
 
@@ -264,7 +264,7 @@ func PercentRank(args ...builder.Exp) builder.AggExpBuilder {
 //	cume_dist ( args ) WITHIN GROUP ( ORDER BY sorted_args ) → double precision
 //
 // Computes the cumulative distribution, that is (number of rows preceding or peers with hypothetical row) / (total rows). The value thus ranges from 1/N to 1.
-func CumeDist(args ...builder.Exp) builder.AggExpBuilder {
+func CumeDist(args ...builder.Exp) builder.AggBuilder {
 	return builder.Agg("cume_dist", args)
 }
 
@@ -275,6 +275,6 @@ func CumeDist(args ...builder.Exp) builder.AggExpBuilder {
 //	GROUPING ( group_by_expression(s) ) → integer
 //
 // Returns a bit mask indicating which GROUP BY expressions are not included in the current grouping set. Bits are assigned with the rightmost argument corresponding to the least-significant bit; each bit is 0 if the corresponding expression is included in the grouping criteria of the grouping set generating the current result row, and 1 if it is not included.
-func Grouping(exps ...builder.Exp) builder.AggExpBuilder {
+func Grouping(exps ...builder.Exp) builder.AggBuilder {
 	return builder.Agg("GROUPING", exps)
 }
