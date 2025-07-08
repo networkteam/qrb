@@ -21,6 +21,8 @@ type DeleteBuilder struct {
 	returningItems   returningItems
 }
 
+func (b DeleteBuilder) isWithQuery() {}
+
 func (b DeleteBuilder) As(alias string) DeleteBuilder {
 	newBuilder := b
 	newBuilder.alias = alias
@@ -104,6 +106,12 @@ func (b ReturningDeleteBuilder) As(outputName string) DeleteBuilder {
 }
 
 func (b DeleteBuilder) WriteSQL(sb *SQLBuilder) {
+	sb.WriteRune('(')
+	b.innerWriteSQL(sb)
+	sb.WriteRune(')')
+}
+
+func (b DeleteBuilder) innerWriteSQL(sb *SQLBuilder) {
 	if len(b.withQueries) > 0 {
 		b.withQueries.WriteSQL(sb)
 	}
