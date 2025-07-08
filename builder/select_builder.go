@@ -600,26 +600,26 @@ func (b GroupyBySelectBuilder) Empty() GroupyBySelectBuilder {
 }
 
 // Rollup adds a ROLLUP grouping element for the given expression sets to the GROUP BY clause.
-func (b GroupyBySelectBuilder) Rollup(sets ...[]Exp) GroupyBySelectBuilder {
+func (b GroupyBySelectBuilder) Rollup(sets ...Expressions) GroupyBySelectBuilder {
 	return b.groupByAdd(groupingElement{
 		groupingType: groupingTypeRollup,
-		sets:         sets,
+		sets:         unwrapExpressions(sets),
 	})
 }
 
 // Cube adds a CUBE grouping element for the given expression sets to the GROUP BY clause.
-func (b GroupyBySelectBuilder) Cube(sets ...[]Exp) GroupyBySelectBuilder {
+func (b GroupyBySelectBuilder) Cube(sets ...Expressions) GroupyBySelectBuilder {
 	return b.groupByAdd(groupingElement{
 		groupingType: groupingTypeCube,
-		sets:         sets,
+		sets:         unwrapExpressions(sets),
 	})
 }
 
 // GroupingSets adds a GROUPING SETS grouping element for the given expression sets to the GROUP BY clause.
-func (b GroupyBySelectBuilder) GroupingSets(sets ...[]Exp) GroupyBySelectBuilder {
+func (b GroupyBySelectBuilder) GroupingSets(sets ...Expressions) GroupyBySelectBuilder {
 	return b.groupByAdd(groupingElement{
 		groupingType: groupingTypeGroupingSets,
-		sets:         sets,
+		sets:         unwrapExpressions(sets),
 	})
 }
 

@@ -128,4 +128,36 @@ func TestDeleteBuilder(t *testing.T) {
 			q,
 		)
 	})
+
+	t.Run("", func(t *testing.T) {
+		q := qrb.DeleteFrom(qrb.N("list_line_items")).
+			Where(qrb.And(
+				qrb.N("shopping_cart_id").Eq(qrb.Arg(99)),
+				qrb.Exps(qrb.N("supplier_id"), qrb.N("article_id"), qrb.N("unit_id")).In(
+					qrb.Select(
+						fn.Unnest(qrb.Arg([]int{1, 2, 3}).Cast("integer[]")),
+						fn.Unnest(qrb.Arg([]int{4, 5, 6}).Cast("integer[]")),
+						fn.Unnest(qrb.Arg([]int{7, 8, 9}).Cast("integer[]")),
+					),
+				),
+			))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+				DELETE FROM list_line_items
+				WHERE shopping_cart_id = $1
+				AND (supplier_id, article_id, unit_id) IN (
+					SELECT unnest($2::integer[]), unnest($3::integer[]), unnest($4::integer[])
+				)
+				`,
+			[]any{
+				99,
+				[]int{1, 2, 3},
+				[]int{4, 5, 6},
+				[]int{7, 8, 9},
+			},
+			q,
+		)
+	})
 }

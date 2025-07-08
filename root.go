@@ -146,10 +146,10 @@ func Interval(s string) builder.Exp {
 	return builder.Interval(s)
 }
 
-// Exps returns a slice of expressions, just for syntactic sugar.
-// TODO We could use this as a way to express a scalar list of expressions e.g. for IN by using a custom slice type
+// Exps returns a list of expressions.
+// These implement builder.ExpBase, so additional operators can be chained.
 func Exps(exps ...builder.Exp) builder.Expressions {
-	return exps
+	return builder.ToExpressions(exps...)
 }
 
 // --- Subquery Expressions

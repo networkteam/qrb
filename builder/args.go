@@ -21,13 +21,33 @@ func (a argExp) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString(p)
 }
 
-type Expressions []Exp
+type Expressions struct {
+	exps []Exp
+	ExpBase
+}
+
+func ToExpressions(exps ...Exp) Expressions {
+	return Expressions{
+		exps: exps,
+		ExpBase: ExpBase{
+			Exp: Expressions{exps: exps},
+		},
+	}
+}
+
+func unwrapExpressions(exps []Expressions) [][]Exp {
+	result := make([][]Exp, len(exps))
+	for i, e := range exps {
+		result[i] = e.exps
+	}
+	return result
+}
 
 func (e Expressions) IsExp() {}
 
 func (e Expressions) WriteSQL(sb *SQLBuilder) {
 	sb.WriteRune('(')
-	for i, exp := range e {
+	for i, exp := range e.exps {
 		if i > 0 {
 			sb.WriteRune(',')
 		}
@@ -44,7 +64,7 @@ func Args[T any](arguments ...T) Expressions {
 	for i, arg := range arguments {
 		exps[i] = Arg(arg)
 	}
-	return exps
+	return ToExpressions(exps...)
 }
 
 // Bind creates an expression that represents an argument that will be bound to a placeholder with the given value.
