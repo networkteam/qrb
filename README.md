@@ -49,9 +49,32 @@ func main() {
 ## Core Concepts
 
 - **Immutable Builders**: All builders return new instances, making them safe for reuse
-- **Expressions**: Use `qrb.N()` for identifiers, `qrb.Arg()` for parameters, and `qrb.String()`, `qrb.Int()`, etc. for literals
+- **Expressions**: Use `N()` for identifiers, `Arg()` for parameters, and `String()`, `Int()`, etc. for literals
 - **Fluent API**: Chain method calls naturally following SQL structure
 - **Type Safety**: Builders guide you through valid SQL construction with appropriate method availability
+
+### Recommended Import Pattern
+
+For the best development experience, we recommend using a dot import for the main qrb package:
+
+```go
+import (
+    . "github.com/networkteam/qrb"
+    "github.com/networkteam/qrb/fn"
+)
+```
+
+This allows you to write clean, readable queries without the `qrb.` prefix:
+
+```go
+// With dot import (recommended)
+q := Select(N("name")).From(N("users")).Where(N("active").Eq(Bool(true)))
+
+// Without dot import (more verbose)
+q := qrb.Select(qrb.N("name")).From(qrb.N("users")).Where(qrb.N("active").Eq(qrb.Bool(true)))
+```
+
+All examples in this README use the dot import pattern for improved readability.
 
 ## Examples
 
@@ -60,7 +83,7 @@ func main() {
 #### Simple SELECT
 
 ```go
-q := qrb.Select(qrb.N("*")).From(qrb.N("users"))
+q := Select(N("*")).From(N("users"))
 ```
 
 ```sql
@@ -70,9 +93,9 @@ SELECT * FROM users
 #### SELECT with WHERE
 
 ```go
-q := qrb.Select(qrb.N("name"), qrb.N("email")).
-    From(qrb.N("users")).
-    Where(qrb.N("active").Eq(qrb.Bool(true)))
+q := Select(N("name"), N("email")).
+    From(N("users")).
+    Where(N("active").Eq(Bool(true)))
 ```
 
 ```sql
@@ -82,14 +105,14 @@ SELECT name, email FROM users WHERE active = true
 #### SELECT with multiple conditions
 
 ```go
-q := qrb.Select(qrb.N("*")).
-    From(qrb.N("employees")).
-    Where(qrb.And(
-        qrb.Or(
-            qrb.N("firstname").ILike(qrb.Arg("John%")),
-            qrb.N("lastname").ILike(qrb.Arg("John%")),
+q := Select(N("*")).
+    From(N("employees")).
+    Where(And(
+        Or(
+            N("firstname").ILike(Arg("John%")),
+            N("lastname").ILike(Arg("John%")),
         ),
-        qrb.N("active").Eq(qrb.Bool(true)),
+        N("active").Eq(Bool(true)),
     ))
 ```
 
@@ -101,9 +124,9 @@ WHERE ((firstname ILIKE $1) OR (lastname ILIKE $1)) AND (active = $2)
 #### SELECT DISTINCT
 
 ```go
-q := qrb.Select().Distinct().
-    Select(qrb.N("department")).
-    From(qrb.N("employees"))
+q := Select().Distinct().
+    Select(N("department")).
+    From(N("employees"))
 ```
 
 ```sql
@@ -113,11 +136,11 @@ SELECT DISTINCT department FROM employees
 #### SELECT with ORDER BY and LIMIT
 
 ```go
-q := qrb.Select(qrb.N("name"), qrb.N("salary")).
-    From(qrb.N("employees")).
-    OrderBy(qrb.N("salary")).Desc().NullsLast().
-    Limit(qrb.Int(10)).
-    Offset(qrb.Int(20))
+q := Select(N("name"), N("salary")).
+    From(N("employees")).
+    OrderBy(N("salary")).Desc().NullsLast().
+    Limit(Int(10)).
+    Offset(Int(20))
 ```
 
 ```sql
@@ -131,9 +154,9 @@ LIMIT 10 OFFSET 20
 #### INSERT with VALUES
 
 ```go
-q := qrb.InsertInto(qrb.N("users")).
+q := InsertInto(N("users")).
     ColumnNames("name", "email", "active").
-    Values(qrb.String("John Doe"), qrb.String("john@example.com"), qrb.Bool(true))
+    Values(String("John Doe"), String("john@example.com"), Bool(true))
 ```
 
 ```sql
@@ -144,10 +167,10 @@ VALUES ('John Doe', 'john@example.com', true)
 #### INSERT multiple rows
 
 ```go
-q := qrb.InsertInto(qrb.N("products")).
+q := InsertInto(N("products")).
     ColumnNames("name", "price", "category").
-    Values(qrb.String("Laptop"), qrb.Float(999.99), qrb.String("Electronics")).
-    Values(qrb.String("Book"), qrb.Float(19.99), qrb.String("Literature"))
+    Values(String("Laptop"), Float(999.99), String("Electronics")).
+    Values(String("Book"), Float(19.99), String("Literature"))
 ```
 
 ```sql
@@ -159,8 +182,8 @@ INSERT INTO products (name, price, category) VALUES
 #### INSERT with SELECT
 
 ```go
-q := qrb.InsertInto(qrb.N("archived_users")).
-    Query(qrb.Select(qrb.N("*")).From(qrb.N("users")).Where(qrb.N("active").Eq(qrb.Bool(false))))
+q := InsertInto(N("archived_users")).
+    Query(Select(N("*")).From(N("users")).Where(N("active").Eq(Bool(false))))
 ```
 
 ```sql
@@ -170,10 +193,10 @@ INSERT INTO archived_users SELECT * FROM users WHERE active = false
 #### INSERT with RETURNING
 
 ```go
-q := qrb.InsertInto(qrb.N("users")).
+q := InsertInto(N("users")).
     ColumnNames("name", "email").
-    Values(qrb.String("Jane Doe"), qrb.String("jane@example.com")).
-    Returning(qrb.N("id"), qrb.N("created_at"))
+    Values(String("Jane Doe"), String("jane@example.com")).
+    Returning(N("id"), N("created_at"))
 ```
 
 ```sql
@@ -184,12 +207,12 @@ RETURNING id, created_at
 #### UPSERT (INSERT with ON CONFLICT)
 
 ```go
-q := qrb.InsertInto(qrb.N("users")).
+q := InsertInto(N("users")).
     ColumnNames("email", "name").
-    Values(qrb.String("john@example.com"), qrb.String("John Updated")).
-    OnConflict(qrb.N("email")).DoUpdate().
-    Set("name", qrb.N("EXCLUDED.name")).
-    Set("updated_at", qrb.N("NOW()"))
+    Values(String("john@example.com"), String("John Updated")).
+    OnConflict(N("email")).DoUpdate().
+    Set("name", N("EXCLUDED.name")).
+    Set("updated_at", N("NOW()"))
 ```
 
 ```sql
@@ -201,10 +224,10 @@ SET name = EXCLUDED.name, updated_at = NOW()
 #### UPDATE
 
 ```go
-q := qrb.Update(qrb.N("users")).
-    Set("name", qrb.String("Updated Name")).
-    Set("updated_at", qrb.N("NOW()")).
-    Where(qrb.N("id").Eq(qrb.Arg(123)))
+q := Update(N("users")).
+    Set("name", String("Updated Name")).
+    Set("updated_at", N("NOW()")).
+    Where(N("id").Eq(Arg(123)))
 ```
 
 ```sql
@@ -214,10 +237,10 @@ UPDATE users SET name = 'Updated Name', updated_at = NOW() WHERE id = $1
 #### UPDATE with FROM
 
 ```go
-q := qrb.Update(qrb.N("employees")).
-    Set("department_name", qrb.N("d.name")).
-    From(qrb.N("departments")).As("d").
-    Where(qrb.N("employees.department_id").Eq(qrb.N("d.id")))
+q := Update(N("employees")).
+    Set("department_name", N("d.name")).
+    From(N("departments")).As("d").
+    Where(N("employees.department_id").Eq(N("d.id")))
 ```
 
 ```sql
@@ -229,8 +252,8 @@ WHERE employees.department_id = d.id
 #### DELETE
 
 ```go
-q := qrb.DeleteFrom(qrb.N("users")).
-    Where(qrb.N("active").Eq(qrb.Bool(false)))
+q := DeleteFrom(N("users")).
+    Where(N("active").Eq(Bool(false)))
 ```
 
 ```sql
@@ -240,11 +263,11 @@ DELETE FROM users WHERE active = false
 #### DELETE with USING
 
 ```go
-q := qrb.DeleteFrom(qrb.N("orders")).
-    Using(qrb.N("customers")).
-    Where(qrb.And(
-        qrb.N("orders.customer_id").Eq(qrb.N("customers.id")),
-        qrb.N("customers.status").Eq(qrb.String("inactive")),
+q := DeleteFrom(N("orders")).
+    Using(N("customers")).
+    Where(And(
+        N("orders.customer_id").Eq(N("customers.id")),
+        N("customers.status").Eq(String("inactive")),
     ))
 ```
 
@@ -258,9 +281,9 @@ WHERE orders.customer_id = customers.id AND customers.status = 'inactive'
 #### INNER JOIN
 
 ```go
-q := qrb.Select(qrb.N("u.name"), qrb.N("p.title")).
-    From(qrb.N("users")).As("u").
-    Join(qrb.N("posts")).As("p").On(qrb.N("u.id").Eq(qrb.N("p.user_id")))
+q := Select(N("u.name"), N("p.title")).
+    From(N("users")).As("u").
+    Join(N("posts")).As("p").On(N("u.id").Eq(N("p.user_id")))
 ```
 
 ```sql
@@ -271,9 +294,9 @@ JOIN posts AS p ON u.id = p.user_id
 #### LEFT JOIN
 
 ```go
-q := qrb.Select(qrb.N("u.name"), qrb.N("p.title")).
-    From(qrb.N("users")).As("u").
-    LeftJoin(qrb.N("posts")).As("p").On(qrb.N("u.id").Eq(qrb.N("p.user_id")))
+q := Select(N("u.name"), N("p.title")).
+    From(N("users")).As("u").
+    LeftJoin(N("posts")).As("p").On(N("u.id").Eq(N("p.user_id")))
 ```
 
 ```sql
@@ -284,9 +307,9 @@ LEFT JOIN posts AS p ON u.id = p.user_id
 #### JOIN with USING
 
 ```go
-q := qrb.Select(qrb.N("u.name"), qrb.N("p.title")).
-    From(qrb.N("users")).As("u").
-    Join(qrb.N("posts")).As("p").Using("user_id")
+q := Select(N("u.name"), N("p.title")).
+    From(N("users")).As("u").
+    Join(N("posts")).As("p").Using("user_id")
 ```
 
 ```sql
@@ -297,10 +320,10 @@ JOIN posts AS p USING (user_id)
 #### Multiple JOINs
 
 ```go
-q := qrb.Select(qrb.N("u.name"), qrb.N("p.title"), qrb.N("c.name")).
-    From(qrb.N("users")).As("u").
-    Join(qrb.N("posts")).As("p").On(qrb.N("u.id").Eq(qrb.N("p.user_id"))).
-    Join(qrb.N("categories")).As("c").On(qrb.N("p.category_id").Eq(qrb.N("c.id")))
+q := Select(N("u.name"), N("p.title"), N("c.name")).
+    From(N("users")).As("u").
+    Join(N("posts")).As("p").On(N("u.id").Eq(N("p.user_id"))).
+    Join(N("categories")).As("c").On(N("p.category_id").Eq(N("c.id")))
 ```
 
 ```sql
@@ -314,10 +337,10 @@ JOIN categories AS c ON p.category_id = c.id
 #### GROUP BY with aggregate functions
 
 ```go
-q := qrb.Select(qrb.N("department")).
-    Select(fn.Count(qrb.N("*"))).As("employee_count").
-    From(qrb.N("employees")).
-    GroupBy(qrb.N("department"))
+q := Select(N("department")).
+    Select(fn.Count(N("*"))).As("employee_count").
+    From(N("employees")).
+    GroupBy(N("department"))
 ```
 
 ```sql
@@ -329,11 +352,11 @@ GROUP BY department
 #### GROUP BY with HAVING
 
 ```go
-q := qrb.Select(qrb.N("department")).
-    Select(fn.Avg(qrb.N("salary"))).As("avg_salary").
-    From(qrb.N("employees")).
-    GroupBy(qrb.N("department")).
-    Having(fn.Avg(qrb.N("salary")).Gt(qrb.Int(50000)))
+q := Select(N("department")).
+    Select(fn.Avg(N("salary"))).As("avg_salary").
+    From(N("employees")).
+    GroupBy(N("department")).
+    Having(fn.Avg(N("salary")).Gt(Int(50000)))
 ```
 
 ```sql
@@ -346,12 +369,12 @@ HAVING avg(salary) > 50000
 #### GROUP BY with ROLLUP
 
 ```go
-q := qrb.Select(qrb.N("department"), qrb.N("job_title"), fn.Sum(qrb.N("salary"))).
-    From(qrb.N("employees")).
+q := Select(N("department"), N("job_title"), fn.Sum(N("salary"))).
+    From(N("employees")).
     GroupBy().
     Rollup(
-        qrb.Exps(qrb.N("department")),
-        qrb.Exps(qrb.N("job_title")),
+        Exps(N("department")),
+        Exps(N("job_title")),
     )
 ```
 
@@ -364,13 +387,13 @@ GROUP BY ROLLUP (department, job_title)
 #### GROUP BY with GROUPING SETS
 
 ```go
-q := qrb.Select(qrb.N("department"), qrb.N("job_title"), fn.Sum(qrb.N("salary"))).
-    From(qrb.N("employees")).
+q := Select(N("department"), N("job_title"), fn.Sum(N("salary"))).
+    From(N("employees")).
     GroupBy().
     GroupingSets(
-        qrb.Exps(qrb.N("department")),
-        qrb.Exps(qrb.N("job_title")),
-        qrb.Exps(),
+        Exps(N("department")),
+        Exps(N("job_title")),
+        Exps(),
     )
 ```
 
@@ -385,11 +408,11 @@ GROUP BY GROUPING SETS (department, job_title, ())
 #### ROW_NUMBER
 
 ```go
-q := qrb.Select(
-    qrb.N("name"),
-    qrb.N("salary"),
-    fn.RowNumber().Over().PartitionBy(qrb.N("department")).OrderBy(qrb.N("salary")).Desc(),
-).From(qrb.N("employees"))
+q := Select(
+    N("name"),
+    N("salary"),
+    fn.RowNumber().Over().PartitionBy(N("department")).OrderBy(N("salary")).Desc(),
+).From(N("employees"))
 ```
 
 ```sql
@@ -400,12 +423,12 @@ FROM employees
 #### RANK and DENSE_RANK
 
 ```go
-q := qrb.Select(
-    qrb.N("name"),
-    qrb.N("salary"),
-    fn.Rank().Over().PartitionBy(qrb.N("department")).OrderBy(qrb.N("salary")).Desc(),
-    fn.DenseRank().Over().PartitionBy(qrb.N("department")).OrderBy(qrb.N("salary")).Desc(),
-).From(qrb.N("employees"))
+q := Select(
+    N("name"),
+    N("salary"),
+    fn.Rank().Over().PartitionBy(N("department")).OrderBy(N("salary")).Desc(),
+    fn.DenseRank().Over().PartitionBy(N("department")).OrderBy(N("salary")).Desc(),
+).From(N("employees"))
 ```
 
 ```sql
@@ -418,11 +441,11 @@ FROM employees
 #### Named Windows
 
 ```go
-q := qrb.Select(
-    fn.Sum(qrb.N("salary")).Over("w"),
-    fn.Avg(qrb.N("salary")).Over("w"),
-).From(qrb.N("employees")).
-Window("w").As().PartitionBy(qrb.N("department")).OrderBy(qrb.N("salary")).Desc().
+q := Select(
+    fn.Sum(N("salary")).Over("w"),
+    fn.Avg(N("salary")).Over("w"),
+).From(N("employees")).
+Window("w").As().PartitionBy(N("department")).OrderBy(N("salary")).Desc().
 SelectBuilder
 ```
 
@@ -437,12 +460,12 @@ WINDOW w AS (PARTITION BY department ORDER BY salary DESC)
 #### Simple JSON object
 
 ```go
-q := qrb.Select(
+q := Select(
     fn.JsonBuildObject().
-        Prop("id", qrb.N("id")).
-        Prop("name", qrb.N("name")).
-        Prop("email", qrb.N("email")),
-).From(qrb.N("users"))
+        Prop("id", N("id")).
+        Prop("name", N("name")).
+        Prop("email", N("email")),
+).From(N("users"))
 ```
 
 ```sql
@@ -453,15 +476,15 @@ FROM users
 #### JSON with aggregation
 
 ```go
-q := qrb.Select(
-    qrb.N("department"),
+q := Select(
+    N("department"),
     fn.JsonAgg(
         fn.JsonBuildObject().
-            Prop("name", qrb.N("name")).
-            Prop("salary", qrb.N("salary")),
-    ).OrderBy(qrb.N("name")),
-).From(qrb.N("employees")).
-GroupBy(qrb.N("department"))
+            Prop("name", N("name")).
+            Prop("salary", N("salary")),
+    ).OrderBy(N("name")),
+).From(N("employees")).
+GroupBy(N("department"))
 ```
 
 ```sql
@@ -474,23 +497,23 @@ GROUP BY department
 #### Complex nested JSON with CTEs
 
 ```go
-q := qrb.With("author_json").As(
-    qrb.Select(qrb.N("authors.author_id")).
+q := With("author_json").As(
+    Select(N("authors.author_id")).
         Select(
             fn.JsonBuildObject().
-                Prop("id", qrb.N("authors.author_id")).
-                Prop("name", qrb.N("authors.name")),
+                Prop("id", N("authors.author_id")).
+                Prop("name", N("authors.name")),
         ).As("json").
-        From(qrb.N("authors")),
+        From(N("authors")),
 ).
 Select(
-    qrb.N("posts.post_id"),
+    N("posts.post_id"),
     fn.JsonBuildObject().
-        Prop("title", qrb.N("posts.title")).
-        Prop("author", qrb.N("author_json.json")),
+        Prop("title", N("posts.title")).
+        Prop("author", N("author_json.json")),
 ).
-From(qrb.N("posts")).
-LeftJoin(qrb.N("author_json")).On(qrb.N("posts.author_id").Eq(qrb.N("author_json.author_id")))
+From(N("posts")).
+LeftJoin(N("author_json")).On(N("posts.author_id").Eq(N("author_json.author_id")))
 ```
 
 ```sql
@@ -510,7 +533,7 @@ LEFT JOIN author_json ON posts.author_id = author_json.author_id
 #### Array construction
 
 ```go
-q := qrb.Select(qrb.Array(qrb.String("a"), qrb.String("b"), qrb.String("c")))
+q := Select(Array(String("a"), String("b"), String("c")))
 ```
 
 ```sql
@@ -520,9 +543,9 @@ SELECT ARRAY['a', 'b', 'c']
 #### Array functions
 
 ```go
-q := qrb.Select(
-    fn.ArrayAppend(qrb.Array(qrb.Int(1), qrb.Int(2)), qrb.Int(3)),
-    fn.ArrayLength(qrb.Array(qrb.Int(1), qrb.Int(2), qrb.Int(3)), qrb.Int(1)),
+q := Select(
+    fn.ArrayAppend(Array(Int(1), Int(2)), Int(3)),
+    fn.ArrayLength(Array(Int(1), Int(2), Int(3)), Int(1)),
 )
 ```
 
@@ -533,8 +556,8 @@ SELECT array_append(ARRAY[1, 2], 3), array_length(ARRAY[1, 2, 3], 1)
 #### UNNEST
 
 ```go
-q := qrb.Select(qrb.N("*")).
-    From(fn.Unnest(qrb.Array(qrb.String("a"), qrb.String("b"), qrb.String("c")))).
+q := Select(N("*")).
+    From(fn.Unnest(Array(String("a"), String("b"), String("c")))).
     As("t").ColumnAliases("value")
 ```
 
@@ -545,11 +568,11 @@ SELECT * FROM unnest(ARRAY['a', 'b', 'c']) AS t (value)
 #### Array aggregation
 
 ```go
-q := qrb.Select(
-    qrb.N("department"),
-    fn.ArrayAgg(qrb.N("name")).OrderBy(qrb.N("name")),
-).From(qrb.N("employees")).
-GroupBy(qrb.N("department"))
+q := Select(
+    N("department"),
+    fn.ArrayAgg(N("name")).OrderBy(N("name")),
+).From(N("employees")).
+GroupBy(N("department"))
 ```
 
 ```sql
@@ -563,12 +586,12 @@ GROUP BY department
 #### EXISTS
 
 ```go
-q := qrb.Select(qrb.N("name")).
-    From(qrb.N("users")).
-    Where(qrb.Exists(
-        qrb.Select(qrb.Int(1)).
-            From(qrb.N("posts")).
-            Where(qrb.N("posts.user_id").Eq(qrb.N("users.id"))),
+q := Select(N("name")).
+    From(N("users")).
+    Where(Exists(
+        Select(Int(1)).
+            From(N("posts")).
+            Where(N("posts.user_id").Eq(N("users.id"))),
     ))
 ```
 
@@ -580,12 +603,12 @@ WHERE EXISTS (SELECT 1 FROM posts WHERE posts.user_id = users.id)
 #### IN with subquery
 
 ```go
-q := qrb.Select(qrb.N("name")).
-    From(qrb.N("users")).
-    Where(qrb.N("id").In(
-        qrb.Select(qrb.N("user_id")).
-            From(qrb.N("posts")).
-            Where(qrb.N("published").Eq(qrb.Bool(true))),
+q := Select(N("name")).
+    From(N("users")).
+    Where(N("id").In(
+        Select(N("user_id")).
+            From(N("posts")).
+            Where(N("published").Eq(Bool(true))),
     ))
 ```
 
@@ -597,12 +620,12 @@ WHERE id IN (SELECT user_id FROM posts WHERE published = true)
 #### Correlated subquery
 
 ```go
-q := qrb.Select(qrb.N("name"), qrb.N("salary")).
-    From(qrb.N("employees")).As("e1").
-    Where(qrb.N("salary").Gt(
-        qrb.Select(fn.Avg(qrb.N("salary"))).
-            From(qrb.N("employees")).As("e2").
-            Where(qrb.N("e1.department").Eq(qrb.N("e2.department"))),
+q := Select(N("name"), N("salary")).
+    From(N("employees")).As("e1").
+    Where(N("salary").Gt(
+        Select(fn.Avg(N("salary"))).
+            From(N("employees")).As("e2").
+            Where(N("e1.department").Eq(N("e2.department"))),
     ))
 ```
 
@@ -617,11 +640,11 @@ WHERE salary > (
 #### Subquery in FROM
 
 ```go
-q := qrb.Select(qrb.N("avg_salary")).
+q := Select(N("avg_salary")).
     From(
-        qrb.Select(fn.Avg(qrb.N("salary"))).As("avg_salary").
-            From(qrb.N("employees")).
-            GroupBy(qrb.N("department")),
+        Select(fn.Avg(N("salary"))).As("avg_salary").
+            From(N("employees")).
+            GroupBy(N("department")),
     ).As("dept_averages")
 ```
 
@@ -636,14 +659,14 @@ SELECT avg_salary FROM (
 #### Common Table Expressions (WITH)
 
 ```go
-q := qrb.With("recent_orders").As(
-    qrb.Select(qrb.N("*")).
-        From(qrb.N("orders")).
-        Where(qrb.N("created_at").Gt(qrb.String("2023-01-01"))),
+q := With("recent_orders").As(
+    Select(N("*")).
+        From(N("orders")).
+        Where(N("created_at").Gt(String("2023-01-01"))),
 ).
-Select(qrb.N("customer_name"), fn.Count(qrb.N("*"))).
-From(qrb.N("recent_orders")).
-GroupBy(qrb.N("customer_name"))
+Select(N("customer_name"), fn.Count(N("*"))).
+From(N("recent_orders")).
+GroupBy(N("customer_name"))
 ```
 
 ```sql
@@ -656,17 +679,17 @@ SELECT customer_name, count(*) FROM recent_orders GROUP BY customer_name
 #### Recursive CTE
 
 ```go
-q := qrb.WithRecursive("employee_hierarchy").
+q := WithRecursive("employee_hierarchy").
     ColumnNames("employee_id", "name", "manager_id", "level").As(
-    qrb.Select(qrb.N("employee_id"), qrb.N("name"), qrb.N("manager_id"), qrb.Int(1)).
-        From(qrb.N("employees")).
-        Where(qrb.N("manager_id").IsNull()).
+    Select(N("employee_id"), N("name"), N("manager_id"), Int(1)).
+        From(N("employees")).
+        Where(N("manager_id").IsNull()).
         Union().All().
-        Select(qrb.N("e.employee_id"), qrb.N("e.name"), qrb.N("e.manager_id"), qrb.N("eh.level").Plus(qrb.Int(1))).
-        From(qrb.N("employees")).As("e").
-        Join(qrb.N("employee_hierarchy")).As("eh").On(qrb.N("e.manager_id").Eq(qrb.N("eh.employee_id"))),
+        Select(N("e.employee_id"), N("e.name"), N("e.manager_id"), N("eh.level").Plus(Int(1))).
+        From(N("employees")).As("e").
+        Join(N("employee_hierarchy")).As("eh").On(N("e.manager_id").Eq(N("eh.employee_id"))),
 ).
-Select(qrb.N("*")).From(qrb.N("employee_hierarchy"))
+Select(N("*")).From(N("employee_hierarchy"))
 ```
 
 ```sql
@@ -683,12 +706,12 @@ SELECT * FROM employee_hierarchy
 #### ROWS FROM
 
 ```go
-q := qrb.Select(qrb.N("*")).
-    From(qrb.RowsFrom(
-        fn.JsonToRecordset(qrb.String(`[{"name":"John","age":30},{"name":"Jane","age":25}]`)).
+q := Select(N("*")).
+    From(RowsFrom(
+        fn.JsonToRecordset(String(`[{"name":"John","age":30},{"name":"Jane","age":25}]`)).
             ColumnDefinition("name", "TEXT").
             ColumnDefinition("age", "INTEGER"),
-        fn.GenerateSeries(qrb.Int(1), qrb.Int(2)),
+        fn.GenerateSeries(Int(1), Int(2)),
     ).WithOrdinality()).
     As("t").ColumnAliases("name", "age", "series_value", "ordinality")
 ```
@@ -705,11 +728,11 @@ SELECT * FROM ROWS FROM (
 #### String functions
 
 ```go
-q := qrb.Select(
-    fn.Upper(qrb.N("name")),
-    fn.Lower(qrb.N("email")),
-    fn.Initcap(qrb.N("title")),
-).From(qrb.N("users"))
+q := Select(
+    fn.Upper(N("name")),
+    fn.Lower(N("email")),
+    fn.Initcap(N("title")),
+).From(N("users"))
 ```
 
 ```sql
@@ -720,11 +743,11 @@ FROM users
 #### Date/time functions
 
 ```go
-q := qrb.Select(
-    fn.Extract("year", qrb.N("created_at")),
-    fn.Extract("month", qrb.N("created_at")),
-    qrb.N("created_at").Plus(qrb.Interval("1 day")),
-).From(qrb.N("orders"))
+q := Select(
+    fn.Extract("year", N("created_at")),
+    fn.Extract("month", N("created_at")),
+    N("created_at").Plus(Interval("1 day")),
+).From(N("orders"))
 ```
 
 ```sql
@@ -735,10 +758,10 @@ FROM orders
 #### Mathematical operators
 
 ```go
-q := qrb.Select(
-    qrb.N("price").Op("*", qrb.N("quantity")).As("total"),
-    qrb.N("price").Op("*", qrb.Float(1.08)).As("price_with_tax"),
-).From(qrb.N("order_items"))
+q := Select(
+    N("price").Op("*", N("quantity")).As("total"),
+    N("price").Op("*", Float(1.08)).As("price_with_tax"),
+).From(N("order_items"))
 ```
 
 ```sql
@@ -749,14 +772,14 @@ FROM order_items
 #### CASE expressions
 
 ```go
-q := qrb.Select(
-    qrb.N("name"),
-    qrb.Case().
-        When(qrb.N("salary").Lt(qrb.Int(30000)), qrb.String("Low")).
-        When(qrb.N("salary").Lt(qrb.Int(70000)), qrb.String("Medium")).
-        Else(qrb.String("High")).
+q := Select(
+    N("name"),
+    Case().
+        When(N("salary").Lt(Int(30000)), String("Low")).
+        When(N("salary").Lt(Int(70000)), String("Medium")).
+        Else(String("High")).
         As("salary_grade"),
-).From(qrb.N("employees"))
+).From(N("employees"))
 ```
 
 ```sql
@@ -774,14 +797,14 @@ FROM employees
 #### Named parameters
 
 ```go
-q := qrb.Select(qrb.N("*")).
-    From(qrb.N("users")).
-    Where(qrb.And(
-        qrb.N("name").Like(qrb.Bind("search_term")),
-        qrb.N("active").Eq(qrb.Bind("is_active")),
+q := Select(N("*")).
+    From(N("users")).
+    Where(And(
+        N("name").Like(Bind("search_term")),
+        N("active").Eq(Bind("is_active")),
     ))
 
-sql, args, err := qrb.Build(q).
+sql, args, err := Build(q).
     WithNamedArgs(map[string]any{
         "search_term": "John%",
         "is_active":   true,
@@ -797,14 +820,14 @@ SELECT * FROM users WHERE name LIKE $1 AND active = $2
 #### Positional parameters
 
 ```go
-q := qrb.Select(qrb.N("*")).
-    From(qrb.N("users")).
-    Where(qrb.And(
-        qrb.N("name").Like(qrb.Arg("John%")),
-        qrb.N("active").Eq(qrb.Arg(true)),
+q := Select(N("*")).
+    From(N("users")).
+    Where(And(
+        N("name").Like(Arg("John%")),
+        N("active").Eq(Arg(true)),
     ))
 
-sql, args, err := qrb.Build(q).ToSQL()
+sql, args, err := Build(q).ToSQL()
 ```
 
 ```sql
@@ -815,14 +838,14 @@ SELECT * FROM users WHERE name LIKE $1 AND active = $2
 #### Mixing named and positional parameters
 
 ```go
-q := qrb.Select(qrb.N("*")).
-    From(qrb.N("users")).
-    Where(qrb.And(
-        qrb.N("name").Like(qrb.Bind("search_term")),
-        qrb.N("active").Eq(qrb.Arg(true)),
+q := Select(N("*")).
+    From(N("users")).
+    Where(And(
+        N("name").Like(Bind("search_term")),
+        N("active").Eq(Arg(true)),
     ))
 
-sql, args, err := qrb.Build(q).
+sql, args, err := Build(q).
     WithNamedArgs(map[string]any{
         "search_term": "John%",
     }).
@@ -843,6 +866,7 @@ package main
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
+	. "github.com/networkteam/qrb"
 	"github.com/networkteam/qrb/qrbpgx"
 )
 
@@ -852,9 +876,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	q := qrb.Select(qrb.N("name"), qrb.N("email")).
-		From(qrb.N("users")).
-		Where(qrb.N("active").Eq(qrb.Bool(true)))
+	q := Select(N("name"), N("email")).
+		From(N("users")).
+		Where(N("active").Eq(Bool(true)))
 
 	rows, err := qrbpgx.Build(q).WithExecutor(pool).Query(ctx)
 	if err != nil {
@@ -886,7 +910,7 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
-	"github.com/networkteam/qrb"
+	. "github.com/networkteam/qrb"
 	"github.com/networkteam/qrb/qrbsql"
 )
 
@@ -898,9 +922,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	q := qrb.Select(qrb.N("name"), qrb.N("email")).
-		From(qrb.N("users")).
-		Where(qrb.N("active").Eq(qrb.Bool(true)))
+	q := Select(N("name"), N("email")).
+		From(N("users")).
+		Where(N("active").Eq(Bool(true)))
 
 	rows, err := qrbsql.Build(q).WithExecutor(db).Query(ctx)
 	if err != nil {
@@ -927,34 +951,34 @@ func main() {
 ```go
 // Good - define reusable column references
 var (
-    UserID    = qrb.N("users.id")
-    UserName  = qrb.N("users.name")
-    UserEmail = qrb.N("users.email")
+    UserID    = N("users.id")
+    UserName  = N("users.name")
+    UserEmail = N("users.email")
 )
 
-q := qrb.Select(UserName, UserEmail).From(qrb.N("users"))
+q := Select(UserName, UserEmail).From(N("users"))
 ```
 
 ### 2. Leverage Immutability for Reusable Queries
 
 ```go
 // Base query that can be reused
-baseQuery := qrb.Select(qrb.N("*")).From(qrb.N("users"))
+baseQuery := Select(N("*")).From(N("users"))
 
 // Create specific variations
-activeUsers := baseQuery.Where(qrb.N("active").Eq(qrb.Bool(true)))
-recentUsers := baseQuery.Where(qrb.N("created_at").Gt(qrb.String("2023-01-01")))
+activeUsers := baseQuery.Where(N("active").Eq(Bool(true)))
+recentUsers := baseQuery.Where(N("created_at").Gt(String("2023-01-01")))
 ```
 
 ### 3. Use Named Parameters for Dynamic Queries
 
 ```go
-q := qrb.Select(qrb.N("*")).
-    From(qrb.N("users")).
-    Where(qrb.N("name").Like(qrb.Bind("search")))
+q := Select(N("*")).
+    From(N("users")).
+    Where(N("name").Like(Bind("search")))
 
 // Easy to reuse with different parameters
-sql, args, _ := qrb.Build(q).WithNamedArgs(map[string]any{
+sql, args, _ := Build(q).WithNamedArgs(map[string]any{
     "search": "John%",
 }).ToSQL()
 ```
@@ -963,32 +987,32 @@ sql, args, _ := qrb.Build(q).WithNamedArgs(map[string]any{
 
 ```go
 // Break complex queries into readable parts
-userData := qrb.Select(qrb.N("id"), qrb.N("name")).From(qrb.N("users"))
-postData := qrb.Select(qrb.N("user_id"), fn.Count(qrb.N("*"))).From(qrb.N("posts")).GroupBy(qrb.N("user_id"))
+userData := Select(N("id"), N("name")).From(N("users"))
+postData := Select(N("user_id"), fn.Count(N("*"))).From(N("posts")).GroupBy(N("user_id"))
 
-q := qrb.With("user_data").As(userData).
+q := With("user_data").As(userData).
     With("post_counts").As(postData).
-    Select(qrb.N("ud.name"), qrb.N("pc.count")).
-    From(qrb.N("user_data")).As("ud").
-    LeftJoin(qrb.N("post_counts")).As("pc").Using("user_id")
+    Select(N("ud.name"), N("pc.count")).
+    From(N("user_data")).As("ud").
+    LeftJoin(N("post_counts")).As("pc").Using("user_id")
 ```
 
 ### 5. Use JSON for Complex Data Structures
 
 ```go
 // Build hierarchical data efficiently
-q := qrb.Select(
+q := Select(
     fn.JsonBuildObject().
         Prop("user", fn.JsonBuildObject().
-            Prop("id", qrb.N("u.id")).
-            Prop("name", qrb.N("u.name"))).
+            Prop("id", N("u.id")).
+            Prop("name", N("u.name"))).
         Prop("posts", fn.JsonAgg(
             fn.JsonBuildObject().
-                Prop("id", qrb.N("p.id")).
-                Prop("title", qrb.N("p.title")))),
-).From(qrb.N("users")).As("u").
-LeftJoin(qrb.N("posts")).As("p").On(qrb.N("u.id").Eq(qrb.N("p.user_id"))).
-GroupBy(qrb.N("u.id"), qrb.N("u.name"))
+                Prop("id", N("p.id")).
+                Prop("title", N("p.title")))),
+).From(N("users")).As("u").
+LeftJoin(N("posts")).As("p").On(N("u.id").Eq(N("p.user_id"))).
+GroupBy(N("u.id"), N("u.name"))
 ```
 
 ## License
