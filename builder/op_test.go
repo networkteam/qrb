@@ -122,4 +122,117 @@ func TestOp(t *testing.T) {
 			)
 		})
 	})
+
+	t.Run("subscript", func(t *testing.T) {
+		t.Run("simple column subscript", func(t *testing.T) {
+			// mytable.arraycolumn[4]
+			b := qrb.N("mytable.arraycolumn").Subscript(qrb.Int(4))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"mytable.arraycolumn[4]",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("parameter subscript", func(t *testing.T) {
+			// $1[10]
+			b := qrb.Arg(1).Subscript(qrb.Int(10))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"$1[10]",
+				[]any{1},
+				b,
+			)
+		})
+
+		t.Run("function call subscript with parentheses", func(t *testing.T) {
+			// (arrayfunction(a,b))[42]
+			fn := qrb.Func("arrayfunction", qrb.N("a"), qrb.N("b"))
+			b := fn.Subscript(qrb.Int(42))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"(arrayfunction(a,b))[42]",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("array slice with parameter", func(t *testing.T) {
+			// $1[10:42]
+			b := qrb.Arg(1).Subscript(qrb.Int(10), qrb.Int(42))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"$1[10:42]",
+				[]any{1},
+				b,
+			)
+		})
+
+		t.Run("column array slice", func(t *testing.T) {
+			// mytable.arraycolumn[1:5]
+			b := qrb.N("mytable.arraycolumn").Subscript(qrb.Int(1), qrb.Int(5))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"mytable.arraycolumn[1:5]",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("multidimensional array subscript", func(t *testing.T) {
+			// mytable.two_d_column[17][34]
+			b := qrb.N("mytable.two_d_column").Subscript(qrb.Int(17)).Subscript(qrb.Int(34))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"mytable.two_d_column[17][34]",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("subscript with arithmetic expression", func(t *testing.T) {
+			// (a + b)[1]
+			expr := qrb.N("a").Plus(qrb.N("b"))
+			b := expr.Subscript(qrb.Int(1))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"(a + b)[1]",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("subscript without parentheses for high precedence", func(t *testing.T) {
+			// a.b[1] - no parentheses needed as dot has higher precedence
+			b := qrb.N("a.b").Subscript(qrb.Int(1))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"a.b[1]",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("complex expression with subscript", func(t *testing.T) {
+			// (a * b)[1:3]
+			expr := qrb.N("a").Mult(qrb.N("b"))
+			b := expr.Subscript(qrb.Int(1), qrb.Int(3))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"(a * b)[1:3]",
+				nil,
+				b,
+			)
+		})
+	})
 }

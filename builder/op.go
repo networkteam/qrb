@@ -165,6 +165,82 @@ func (b ExpBase) Concat(rgt Exp) ExpBase {
 	return b.Op(opConcat, rgt)
 }
 
+// --- Subscript
+
+type subscriptExp struct {
+	base       Exp
+	subscript  Exp
+	upperBound Exp
+}
+
+func (s subscriptExp) IsExp() {}
+
+func (s subscriptExp) Precedence() int {
+	return 5 // Array element selection has precedence 5
+}
+
+func (s subscriptExp) WriteSQL(sb *SQLBuilder) {
+	// According to PostgreSQL docs, parentheses can be omitted only for 
+	// column references and positional parameters
+	needsParens := true
+	
+	// Check if base is a column reference (IdentExp), positional parameter (argExp),
+	// or another subscript expression (for chaining like arr[1][2])
+	switch s.base.(type) {
+	case IdentExp:
+		needsParens = false
+	case argExp:
+		needsParens = false
+	case subscriptExp:
+		needsParens = false
+	case ExpBase:
+		// Check if ExpBase wraps an argExp, IdentExp, or subscriptExp
+		if expBase, ok := s.base.(ExpBase); ok {
+			switch expBase.Exp.(type) {
+			case argExp:
+				needsParens = false
+			case IdentExp:
+				needsParens = false
+			case subscriptExp:
+				needsParens = false
+			}
+		}
+	}
+
+	if needsParens {
+		sb.WriteRune('(')
+	}
+	s.base.WriteSQL(sb)
+	if needsParens {
+		sb.WriteRune(')')
+	}
+
+	sb.WriteRune('[')
+	s.subscript.WriteSQL(sb)
+	if s.upperBound != nil {
+		sb.WriteRune(':')
+		s.upperBound.WriteSQL(sb)
+	}
+	sb.WriteRune(']')
+}
+
+// Subscript allows to access an array element by index or array slice by lower and upper bounds.
+// When called with one argument: expression[index]
+// When called with two arguments: expression[lower:upper]
+func (b ExpBase) Subscript(index Exp, upperBound ...Exp) ExpBase {
+	var upper Exp
+	if len(upperBound) > 0 {
+		upper = upperBound[0]
+	}
+	return ExpBase{
+		Exp: subscriptExp{
+			base:       b.Exp,
+			subscript:  index,
+			upperBound: upper,
+		},
+	}
+}
+
 // --- Unary expressions
 
 // Not builds a NOT expression.
