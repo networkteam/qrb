@@ -509,7 +509,7 @@ func TestSelectBuilder(t *testing.T) {
 
 		t.Run("example 7", func(t *testing.T) {
 			q := qrb.Select(qrb.N("*")).
-				From(qrb.Func("unnest", qrb.Array(
+				From(fn.Unnest(qrb.Array(
 					qrb.String("a"),
 					qrb.String("b"),
 					qrb.String("c"),
@@ -531,7 +531,7 @@ func TestSelectBuilder(t *testing.T) {
 
 		t.Run("example 7b", func(t *testing.T) {
 			q := qrb.Select(qrb.N("*")).
-				From(qrb.Func("unnest", qrb.Array(
+				From(fn.Unnest(qrb.Array(
 					qrb.String("a"),
 					qrb.String("b"),
 					qrb.String("c"),
@@ -549,7 +549,7 @@ func TestSelectBuilder(t *testing.T) {
 		t.Run("example 8", func(t *testing.T) {
 			q := qrb.With("t").As(
 				qrb.Select(qrb.Func("random")).As("x").
-					From(qrb.Func("generate_series", qrb.Int(1), qrb.Int(3))),
+					From(fn.GenerateSeries(qrb.Int(1), qrb.Int(3))),
 			).
 				Select(qrb.N("*")).From(qrb.N("t")).
 				Union().All().
@@ -692,8 +692,8 @@ func TestSelectBuilder_From(t *testing.T) {
 
 		q := qrb.Select(qrb.N("*")).
 			From(qrb.RowsFrom(
-				qrb.Func("json_to_recordset", qrb.String(`[{"a":40,"b":"foo"},{"a":"100","b":"bar"}]`)).ColumnDefinition("a", "INTEGER").ColumnDefinition("b", "TEXT"),
-				qrb.Func("generate_series", qrb.Int(1), qrb.Int(3)),
+				fn.JsonToRecordset(qrb.String(`[{"a":40,"b":"foo"},{"a":"100","b":"bar"}]`)).ColumnDefinition("a", "INTEGER").ColumnDefinition("b", "TEXT"),
+				fn.GenerateSeries(qrb.Int(1), qrb.Int(3)),
 			).WithOrdinality()).As("x").ColumnAliases("p", "q", "s").
 			OrderBy(qrb.N("p"))
 
@@ -770,7 +770,7 @@ func TestSelectBuilder_Select(t *testing.T) {
 	})
 
 	t.Run("select distinct on", func(t *testing.T) {
-		q := qrb.Select().Distinct().On(qrb.N("name"), qrb.Func("lower", qrb.N("email"))).
+		q := qrb.Select().Distinct().On(qrb.N("name"), fn.Lower(qrb.N("email"))).
 			Select(qrb.N("foo")).
 			From(qrb.N("bar"))
 

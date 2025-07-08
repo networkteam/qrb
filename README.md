@@ -154,8 +154,8 @@ FROM employee_recursive
 ```go
 q := qrb.Select(qrb.N("*")).
     From(qrb.RowsFrom(
-        qrb.Func("json_to_recordset", qrb.String(`[{"a":40,"b":"foo"},{"a":"100","b":"bar"}]`)).ColumnDefinition("a", "INTEGER").ColumnDefinition("b", "TEXT"),
-        qrb.Func("generate_series", qrb.Int(1), qrb.Int(3)),
+        fn.JsonToRecordset(qrb.String(`[{"a":40,"b":"foo"},{"a":"100","b":"bar"}]`)).ColumnDefinition("a", "INTEGER").ColumnDefinition("b", "TEXT"),
+        fn.GenerateSeries(qrb.Int(1), qrb.Int(3)),
     ).WithOrdinality()).As("x").ColumnAliases("p", "q", "s").
     OrderBy(qrb.N("p"))
 ```
