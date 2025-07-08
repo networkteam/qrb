@@ -85,6 +85,7 @@ type selectCombination struct {
 	parts           selectQueryParts
 	combinationType combinationType
 	all             bool
+	query           SelectExp
 }
 
 // AppendWith adds the given with queries to the select builder.
@@ -908,6 +909,15 @@ func (b CombinationBuilder) All() CombinationBuilder {
 	return newBuilder
 }
 
+func (b CombinationBuilder) Query(query SelectExp) CombinationBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.combinations, b.combinations, 0)
+
+	lastIdx := len(newBuilder.combinations) - 1
+	newBuilder.combinations[lastIdx].query = query
+	return newBuilder
+}
+
 // [ ORDER BY expression [ ASC | DESC | USING operator ] [ NULLS { FIRST | LAST } ] [, ...] ]
 
 func (b SelectBuilder) OrderBy(exp Exp) OrderBySelectBuilder {
@@ -1004,10 +1014,15 @@ func (b SelectBuilder) innerWriteSQL(sb *SQLBuilder) {
 			sb.WriteString(" ALL")
 		}
 		sb.WriteRune(' ')
+		if c.query != nil {
+			c.query.WriteSQL(sb)
+		}
 	}
 
 	// Write the current select
-	writeSelectParts(sb, b.parts)
+	if !b.parts.isEmpty() {
+		writeSelectParts(sb, b.parts)
+	}
 
 	if len(b.parts.orderBys) > 0 {
 		sb.WriteString(" ORDER BY ")

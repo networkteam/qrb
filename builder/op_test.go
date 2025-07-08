@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/networkteam/qrb"
+	"github.com/networkteam/qrb/builder"
 	"github.com/networkteam/qrb/internal/testhelper"
 )
 
@@ -230,6 +231,32 @@ func TestOp(t *testing.T) {
 			testhelper.AssertSQLWriterEquals(
 				t,
 				"(a * b)[1:3]",
+				nil,
+				b,
+			)
+		})
+	})
+
+	t.Run("comparison operators", func(t *testing.T) {
+		t.Run("is distinct from", func(t *testing.T) {
+			// Example: a IS DISTINCT FROM b
+			b := qrb.N("a").Plus(qrb.Int(1)).IsDistinctFrom(qrb.N("b"))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"a + 1 IS DISTINCT FROM b",
+				nil,
+				b,
+			)
+		})
+
+		t.Run("is not distinct from", func(t *testing.T) {
+			// Example: a IS NOT DISTINCT FROM b
+			b := builder.ExpBase{Exp: qrb.Not(qrb.N("a"))}.IsNotDistinctFrom(qrb.N("b"))
+
+			testhelper.AssertSQLWriterEquals(
+				t,
+				"(NOT a) IS NOT DISTINCT FROM b",
 				nil,
 				b,
 			)

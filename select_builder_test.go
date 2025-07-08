@@ -1190,3 +1190,21 @@ func TestSelectBuilder_IsEmpty(t *testing.T) {
 		assert.Equal(t, false, query.IsEmpty())
 	})
 }
+
+func TestSelectBuilder_Combinations(t *testing.T) {
+	t.Run("EXCEPT and UNION", func(t *testing.T) {
+		q := qrb.Select(qrb.N("*")).
+			From(qrb.N("input_data")).
+			Except().All().Query(
+			qrb.Select(qrb.N("*")).From(qrb.N("input_not_exists")).Union().All().Select(qrb.N("*")).From(qrb.N("input_alternative_already_exists")).
+				SelectBuilder,
+		)
+
+		testhelper.AssertSQLWriterEquals(t, `
+			SELECT *
+				FROM input_data
+				EXCEPT ALL
+				(SELECT * FROM input_not_exists UNION ALL SELECT * FROM input_alternative_already_exists)
+		`, nil, q)
+	})
+}

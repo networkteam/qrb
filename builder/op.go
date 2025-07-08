@@ -37,23 +37,25 @@ var opPrecedence = map[Operator]int{
 	opPlus:   1,
 	opMinus:  1,
 	// 0: any other operator (clever use of zero value)
-	Operator("BETWEEN"):  -1,
-	Operator("IN"):       -1,
-	Operator("LIKE"):     -1,
-	Operator("ILIKE"):    -1,
-	Operator("SIMILAR"):  -1,
-	opLessThan:           -2,
-	opGreaterThan:        -2,
-	opEqual:              -2,
-	opLessThanOrEqual:    -2,
-	opGreaterThanOrEqual: -2,
-	opNotEqual:           -2,
-	Operator("IS"):       -3,
-	Operator("ISNULL"):   -3,
-	Operator("NOTNULL"):  -3,
-	Operator("NOT"):      -4,
-	Operator("AND"):      -5,
-	Operator("OR"):       -5,
+	Operator("BETWEEN"):              -1,
+	Operator("IN"):                   -1,
+	Operator("LIKE"):                 -1,
+	Operator("ILIKE"):                -1,
+	Operator("SIMILAR"):              -1,
+	opLessThan:                       -2,
+	opGreaterThan:                    -2,
+	opEqual:                          -2,
+	opLessThanOrEqual:                -2,
+	opGreaterThanOrEqual:             -2,
+	opNotEqual:                       -2,
+	Operator("IS"):                   -3,
+	Operator("ISNULL"):               -3,
+	Operator("NOTNULL"):              -3,
+	Operator("IS DISTINCT FROM"):     -3,
+	Operator("IS NOT DISTINCT FROM"): -3,
+	Operator("NOT"):                  -4,
+	Operator("AND"):                  -5,
+	Operator("OR"):                   -5,
 }
 
 type Precedencer interface {
@@ -159,6 +161,14 @@ func (b ExpBase) Gte(rgt Exp) Exp {
 	return b.Op(opGreaterThanOrEqual, rgt)
 }
 
+func (b ExpBase) IsDistinctFrom(rgt Exp) Exp {
+	return b.Op("IS DISTINCT FROM", rgt)
+}
+
+func (b ExpBase) IsNotDistinctFrom(rgt Exp) Exp {
+	return b.Op("IS NOT DISTINCT FROM", rgt)
+}
+
 // --- String operators
 
 func (b ExpBase) Concat(rgt Exp) ExpBase {
@@ -180,10 +190,10 @@ func (s subscriptExp) Precedence() int {
 }
 
 func (s subscriptExp) WriteSQL(sb *SQLBuilder) {
-	// According to PostgreSQL docs, parentheses can be omitted only for 
+	// According to PostgreSQL docs, parentheses can be omitted only for
 	// column references and positional parameters
 	needsParens := true
-	
+
 	// Check if base is a column reference (IdentExp), positional parameter (argExp),
 	// or another subscript expression (for chaining like arr[1][2])
 	switch s.base.(type) {
