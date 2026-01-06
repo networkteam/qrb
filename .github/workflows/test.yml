@@ -17,7 +17,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23'
+          go-version: '1.24'
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
@@ -26,7 +26,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: [ '1.23', '1.24' ]
+        go-version: [ '1.24', '1.25' ]
         platform: [ 'ubuntu-latest' ]
     runs-on: ${{ matrix.platform }}
     steps:
@@ -48,7 +48,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23'
+          go-version: '1.24'
       - name: Calc coverage
         run: |
           go test -cover ./... -coverpkg=github.com/networkteam/qrb/... -coverprofile=coverage.txt
