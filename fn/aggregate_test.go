@@ -15,13 +15,13 @@ func TestAggregateExpressions(t *testing.T) {
 	t.Run("example 1.1", func(t *testing.T) {
 		q := qrb.Select(fn.ArrayAgg(qrb.N("a")).OrderBy(qrb.N("b")).Desc()).From(qrb.N("table"))
 		sql, _, _ := qrb.Build(q).ToSQL()
-		testhelper.AssertSQLEquals(t, "SELECT array_agg(a ORDER BY b DESC) FROM table", sql)
+		testhelper.AssertSQLEquals(t, `SELECT array_agg(a ORDER BY b DESC) FROM "table"`, sql)
 	})
 
 	t.Run("example 1.2", func(t *testing.T) {
 		q := qrb.Select(fn.StringAgg(qrb.N("a"), qrb.String(",")).OrderBy(qrb.N("a"))).From(qrb.N("table"))
 		sql, _, _ := qrb.Build(q).ToSQL()
-		testhelper.AssertSQLEquals(t, "SELECT string_agg(a,',' ORDER BY a) FROM table", sql)
+		testhelper.AssertSQLEquals(t, `SELECT string_agg(a,',' ORDER BY a) FROM "table"`, sql)
 	})
 
 	t.Run("example 1.3", func(t *testing.T) {

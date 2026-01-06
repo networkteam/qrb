@@ -12,6 +12,6 @@ func TestWindowFunctions(t *testing.T) {
 	t.Run("row_number", func(t *testing.T) {
 		q := qrb.Select(fn.RowNumber().Over()).From(qrb.N("table"))
 		sql, _, _ := qrb.Build(q).ToSQL()
-		testhelper.AssertSQLEquals(t, "SELECT row_number() OVER () FROM table", sql)
+		testhelper.AssertSQLEquals(t, `SELECT row_number() OVER () FROM "table"`, sql)
 	})
 }

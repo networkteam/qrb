@@ -963,8 +963,8 @@ func TestSelectBuilder_Where(t *testing.T) {
 			t,
 			`
 			SELECT *
-			FROM table
-			WHERE column = ANY (ARRAY[1, 2, 3])
+			FROM "table"
+			WHERE "column" = ANY (ARRAY[1, 2, 3])
 			`,
 			nil,
 			q,

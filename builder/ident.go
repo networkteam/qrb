@@ -9,17 +9,22 @@ import (
 
 // N writes the given name / identifier.
 //
-// It will validate the identifier when writing the query,
-// but it will not detect all invalid identifiers that are invalid in PostgreSQL (especially considering reserved keywords).
+// It will validate the identifier when writing the query.
+// Reserved PostgreSQL keywords are automatically quoted (e.g. "from" becomes `"from"`).
 func N(s string) IdentExp {
-	exp := IdentExp{ident: strings.TrimSpace(s)}
+	ident := strings.TrimSpace(s)
+	exp := IdentExp{
+		ident:       ident,
+		quotedIdent: quoteIdentifierIfKeyword(ident),
+	}
 	exp.Exp = exp // self-reference for base methods
 	return exp
 }
 
 type IdentExp struct {
 	ExpBase
-	ident string
+	ident       string
+	quotedIdent string // pre-computed quoted identifier for performance
 }
 
 func (i IdentExp) IsExp()     {}
@@ -45,7 +50,7 @@ func (i IdentExp) WriteSQL(sb *SQLBuilder) {
 		}
 	}
 
-	sb.WriteString(i.ident)
+	sb.WriteString(i.quotedIdent)
 }
 
 var validIdentifierRegex = regexp.MustCompile(`(?ms)\A(` +
