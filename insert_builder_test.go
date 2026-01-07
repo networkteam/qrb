@@ -340,6 +340,27 @@ WHERE d.zipcode <> '21201'`,
 		)
 	})
 
+	t.Run("set map with reserved keywords", func(t *testing.T) {
+		q := qrb.
+			InsertInto(qrb.N("events")).
+			SetMap(map[string]any{
+				"event_id": "123",
+				"from":     "2021-01-01",
+				"to":       "2021-01-02",
+				"user":     "john",
+			})
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			INSERT INTO events (event_id,"from","to","user") VALUES
+				($1, $2, $3, $4)
+			`,
+			[]any{"123", "2021-01-01", "2021-01-02", "john"},
+			q,
+		)
+	})
+
 	t.Run("values with args", func(t *testing.T) {
 		q := qrb.
 			InsertInto(qrb.N("films")).

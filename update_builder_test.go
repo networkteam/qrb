@@ -130,9 +130,28 @@ func TestUpdateBuilder(t *testing.T) {
 		testhelper.AssertSQLWriterEquals(
 			t,
 			`
-			UPDATE films SET code = $1, kind = $2 WHERE kind = 'Drama'	
+			UPDATE films SET code = $1, kind = $2 WHERE kind = 'Drama'
 			`,
 			[]any{"UA502", "Comedy"},
+			q,
+		)
+	})
+
+	t.Run("set map with reserved keywords", func(t *testing.T) {
+		q := qrb.
+			Update(qrb.N("events")).
+			SetMap(map[string]any{
+				"from": "2021-01-01",
+				"to":   "2021-01-02",
+			}).
+			Where(qrb.N("event_id").Eq(qrb.String("123")))
+
+		testhelper.AssertSQLWriterEquals(
+			t,
+			`
+			UPDATE events SET "from" = $1, "to" = $2 WHERE event_id = '123'
+			`,
+			[]any{"2021-01-01", "2021-01-02"},
 			q,
 		)
 	})

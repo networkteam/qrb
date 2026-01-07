@@ -175,7 +175,7 @@ func (b UpdateBuilder) innerWriteSQL(sb *SQLBuilder) {
 		if i > 0 {
 			sb.WriteString(",")
 		}
-		sb.WriteString(setItem.columnName)
+		sb.WriteString(quoteIdentifierIfKeyword(setItem.columnName))
 		sb.WriteString(" = ")
 		setItem.value.WriteSQL(sb)
 	}

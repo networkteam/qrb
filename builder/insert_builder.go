@@ -278,7 +278,7 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 					sb.WriteRune(' ')
 				}
 			}
-			sb.WriteString(columnName)
+			sb.WriteString(quoteIdentifierIfKeyword(columnName))
 		}
 		sb.WriteString(")")
 	}
@@ -362,7 +362,7 @@ func (b InsertBuilder) innerWriteSQL(sb *SQLBuilder) {
 					if i > 0 {
 						sb.WriteString(",")
 					}
-					sb.WriteString(item.columnName)
+					sb.WriteString(quoteIdentifierIfKeyword(item.columnName))
 					sb.WriteString(" = ")
 					item.value.WriteSQL(sb)
 				}
