@@ -181,7 +181,7 @@ func (b ColumnCreateTableBuilder) References(table Identer, columns ...string) R
 		table:   table,
 		columns: columns,
 	}
-	return ReferencesCreateTableBuilder{CreateTableBuilder: newBuilder.CreateTableBuilder}
+	return ReferencesCreateTableBuilder(newBuilder)
 }
 
 // --- ReferencesCreateTableBuilder ---

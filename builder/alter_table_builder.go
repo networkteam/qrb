@@ -296,7 +296,7 @@ func (b AddColumnAlterTableBuilder) References(table Identer, columns ...string)
 		table:   table,
 		columns: columns,
 	}
-	return ReferencesAlterTableBuilder{AlterTableBuilder: newBuilder.AlterTableBuilder}
+	return ReferencesAlterTableBuilder(newBuilder)
 }
 
 // --- ReferencesAlterTableBuilder ---
