@@ -92,8 +92,8 @@ json_object('{a,b}', '{1,2}') → {"a": "1", "b": "2"}
 //	( json ) → setof json
 //
 // Expands the top-level JSON array into a set of JSON values.
-func JsonArrayElements(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("json_array_elements", []builder.Exp{exp})
+func JsonArrayElements(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("json_array_elements", exp)
 }
 
 // JsonbArrayElements builds the jsonb_array_elements function.
@@ -101,8 +101,8 @@ func JsonArrayElements(exp builder.Exp) builder.ExpBase {
 //	( jsonb ) → setof jsonb
 //
 // Expands the top-level JSON array into a set of JSON values.
-func JsonbArrayElements(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp(" jsonb_array_elements", []builder.Exp{exp})
+func JsonbArrayElements(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("jsonb_array_elements", exp)
 }
 
 // JsonArrayElementsText builds the json_array_elements_text function.
@@ -110,8 +110,8 @@ func JsonbArrayElements(exp builder.Exp) builder.ExpBase {
 //	( json ) → setof text
 //
 // Expands the top-level JSON array into a set of text values.
-func JsonArrayElementsText(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("json_array_elements_text", []builder.Exp{exp})
+func JsonArrayElementsText(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("json_array_elements_text", exp)
 }
 
 // JsonbArrayElementsText builds the jsonb_array_elements_text function.
@@ -119,8 +119,8 @@ func JsonArrayElementsText(exp builder.Exp) builder.ExpBase {
 //	( jsonb ) → setof text
 //
 // Expands the top-level JSON array into a set of text values.
-func JsonbArrayElementsText(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("jsonb_array_elements_text", []builder.Exp{exp})
+func JsonbArrayElementsText(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("jsonb_array_elements_text", exp)
 }
 
 // JsonArrayLength builds the json_array_length function.
@@ -146,8 +146,8 @@ func JsonbArrayLength(exp builder.Exp) builder.ExpBase {
 //	( json ) → setof record ( key text, value json )
 //
 // Expands the top-level JSON object into a set of key/value pairs.
-func JsonEach(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("json_each", []builder.Exp{exp})
+func JsonEach(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("json_each", exp)
 }
 
 // JsonbEach builds the jsonb_each function.
@@ -155,8 +155,8 @@ func JsonEach(exp builder.Exp) builder.ExpBase {
 //	( jsonb ) → setof record ( key text, value jsonb )
 //
 // Expands the top-level JSON object into a set of key/value pairs.
-func JsonbEach(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("jsonb_each", []builder.Exp{exp})
+func JsonbEach(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("jsonb_each", exp)
 }
 
 // JsonEachText builds the json_each_text function.
@@ -164,8 +164,8 @@ func JsonbEach(exp builder.Exp) builder.ExpBase {
 //	( json ) → setof record ( key text, value text )
 //
 // Expands the top-level JSON object into a set of key/value pairs. The returned values will be of type text.
-func JsonEachText(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("json_each_text", []builder.Exp{exp})
+func JsonEachText(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("json_each_text", exp)
 }
 
 // JsonbEachText builds the jsonb_each_text function.
@@ -173,8 +173,8 @@ func JsonEachText(exp builder.Exp) builder.ExpBase {
 //	( jsonb ) → setof record ( key text, value text )
 //
 // Expands the top-level JSON object into a set of key/value pairs. The returned values will be of type text.
-func JsonbEachText(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("jsonb_each_text", []builder.Exp{exp})
+func JsonbEachText(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("jsonb_each_text", exp)
 }
 
 // JsonExtractPath builds the json_extract_path function.
@@ -218,8 +218,8 @@ func JsonbExtractPathText(fromJson builder.Exp, pathElems ...builder.Exp) builde
 //	( json ) → setof text
 //
 // Returns the set of keys in the top-level JSON object.
-func JsonObjectKeys(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("json_object_keys", []builder.Exp{exp})
+func JsonObjectKeys(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("json_object_keys", exp)
 }
 
 // JsonbObjectKeys builds the jsonb_object_keys function.
@@ -227,8 +227,8 @@ func JsonObjectKeys(exp builder.Exp) builder.ExpBase {
 //	( jsonb ) → setof text
 //
 // Returns the set of keys in the top-level JSON object.
-func JsonbObjectKeys(exp builder.Exp) builder.ExpBase {
-	return builder.FuncExp("jsonb_object_keys", []builder.Exp{exp})
+func JsonbObjectKeys(exp builder.Exp) builder.FuncBuilder {
+	return builder.Func("jsonb_object_keys", exp)
 }
 
 // JsonPopulateRecord builds the json_populate_record function.
@@ -254,8 +254,8 @@ func JsonbPopulateRecord(base builder.Exp, fromJson builder.Exp) builder.ExpBase
 //	( base anyelement, from_json json ) → setof anyelement
 //
 // Expands the top-level JSON array of objects to a set of rows having the composite type of the base argument. Each element of the JSON array is processed as described above for json[b]_populate_record.
-func JsonPopulateRecordset(base builder.Exp, fromJson builder.Exp) builder.ExpBase {
-	return builder.FuncExp("json_populate_recordset", []builder.Exp{base, fromJson})
+func JsonPopulateRecordset(base builder.Exp, fromJson builder.Exp) builder.FuncBuilder {
+	return builder.Func("json_populate_recordset", base, fromJson)
 }
 
 // JsonbPopulateRecordset builds the jsonb_populate_recordset function.
@@ -263,8 +263,8 @@ func JsonPopulateRecordset(base builder.Exp, fromJson builder.Exp) builder.ExpBa
 //	( base anyelement, from_json jsonb ) → setof anyelement
 //
 // Expands the top-level JSON array of objects to a set of rows having the composite type of the base argument. Each element of the JSON array is processed as described above for json[b]_populate_record.
-func JsonbPopulateRecordset(base builder.Exp, fromJson builder.Exp) builder.ExpBase {
-	return builder.FuncExp("jsonb_populate_recordset", []builder.Exp{base, fromJson})
+func JsonbPopulateRecordset(base builder.Exp, fromJson builder.Exp) builder.FuncBuilder {
+	return builder.Func("jsonb_populate_recordset", base, fromJson)
 }
 
 // JsonToRecord builds the json_to_record function.
@@ -406,7 +406,7 @@ func JsonbPathMatch(target builder.Exp, path builder.Exp, options ...builder.Exp
 //	( target jsonb, path jsonpath [, vars jsonb [, silent boolean ]] ) → setof jsonb
 //
 // Returns all JSON items returned by the JSON path for the specified JSON value. The optional vars and silent arguments act the same as for jsonb_path_exists.
-func JsonbPathQuery(target builder.Exp, path builder.Exp, options ...builder.Exp) builder.ExpBase {
+func JsonbPathQuery(target builder.Exp, path builder.Exp, options ...builder.Exp) builder.FuncBuilder {
 	args := []builder.Exp{target, path}
 	if len(options) > 2 {
 		panic(errors.New("too many arguments"))
@@ -414,7 +414,7 @@ func JsonbPathQuery(target builder.Exp, path builder.Exp, options ...builder.Exp
 	if len(options) > 0 {
 		args = append(args, options...)
 	}
-	return builder.FuncExp("jsonb_path_query", args)
+	return builder.Func("jsonb_path_query", args...)
 }
 
 // JsonbPathQueryArray builds the jsonb_path_query_array function.
@@ -489,7 +489,7 @@ func JsonbPathMatchTZ(target builder.Exp, path builder.Exp, options ...builder.E
 //
 // Returns all JSON items returned by the JSON path for the specified JSON value. The optional vars and silent arguments act the same as for jsonb_path_exists.
 // This function acts like its counterpart without the _tz suffix, except that this functions supports comparisons of date/time values that require timezone-aware conversions. Due to this dependency, this function is marked as stable, which means this function cannot be used in indexes. The counterpart is immutable, and so can be used in indexes; but it will throw errors if asked to make such comparisons.
-func JsonbPathQueryTZ(target builder.Exp, path builder.Exp, options ...builder.Exp) builder.ExpBase {
+func JsonbPathQueryTZ(target builder.Exp, path builder.Exp, options ...builder.Exp) builder.FuncBuilder {
 	args := []builder.Exp{target, path}
 	if len(options) > 2 {
 		panic(errors.New("too many arguments"))
@@ -497,7 +497,7 @@ func JsonbPathQueryTZ(target builder.Exp, path builder.Exp, options ...builder.E
 	if len(options) > 0 {
 		args = append(args, options...)
 	}
-	return builder.FuncExp("jsonb_path_query_tz", args)
+	return builder.Func("jsonb_path_query_tz", args...)
 }
 
 // JsonbPathQueryArrayTZ builds the jsonb_path_query_array function.
