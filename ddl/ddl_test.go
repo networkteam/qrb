@@ -3,8 +3,6 @@ package ddl_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/networkteam/qrb"
 	"github.com/networkteam/qrb/ddl"
 	"github.com/networkteam/qrb/internal/testhelper"
@@ -97,7 +95,7 @@ func TestCreateTable(t *testing.T) {
 
 	t.Run("column with REFERENCES ON DELETE CASCADE", func(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("orders")).
-			Column("user_id", "INTEGER").References(qrb.N("users"), "id").OnDelete("CASCADE")
+			Column("user_id", "INTEGER").References(qrb.N("users"), "id").OnDelete().Cascade()
 
 		testhelper.AssertSQLWriterEquals(t,
 			`CREATE TABLE orders (user_id INTEGER REFERENCES users (id) ON DELETE CASCADE)`,
@@ -108,10 +106,51 @@ func TestCreateTable(t *testing.T) {
 	t.Run("column with REFERENCES ON DELETE and ON UPDATE", func(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("orders")).
 			Column("user_id", "INTEGER").References(qrb.N("users"), "id").
-			OnDelete("CASCADE").OnUpdate("SET NULL")
+			OnDelete().Cascade().OnUpdate().SetNull()
 
 		testhelper.AssertSQLWriterEquals(t,
 			`CREATE TABLE orders (user_id INTEGER REFERENCES users (id) ON DELETE CASCADE ON UPDATE SET NULL)`,
+			nil, q,
+		)
+	})
+
+	t.Run("column with REFERENCES ON DELETE SET DEFAULT", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("user_id", "INTEGER").References(qrb.N("users"), "id").OnDelete().SetDefault()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (user_id INTEGER REFERENCES users (id) ON DELETE SET DEFAULT)`,
+			nil, q,
+		)
+	})
+
+	t.Run("column with REFERENCES ON DELETE NO ACTION", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("user_id", "INTEGER").References(qrb.N("users"), "id").OnDelete().NoAction()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (user_id INTEGER REFERENCES users (id) ON DELETE NO ACTION)`,
+			nil, q,
+		)
+	})
+
+	t.Run("column with REFERENCES NOT DEFERRABLE", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("user_id", "INTEGER").References(qrb.N("users"), "id").NotDeferrable()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (user_id INTEGER REFERENCES users (id) NOT DEFERRABLE)`,
+			nil, q,
+		)
+	})
+
+	t.Run("column with REFERENCES DEFERRABLE INITIALLY IMMEDIATE", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("user_id", "INTEGER").References(qrb.N("users"), "id").
+			Deferrable().InitiallyImmediate()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (user_id INTEGER REFERENCES users (id) DEFERRABLE)`,
 			nil, q,
 		)
 	})
@@ -122,7 +161,7 @@ func TestCreateTable(t *testing.T) {
 			Column("name", "TEXT").NotNull().
 			Column("email", "TEXT").NotNull().Unique().
 			Column("age", "INTEGER").Check(qrb.N("age").Gte(qrb.Int(0))).
-			Column("dept_id", "INTEGER").References(qrb.N("departments"), "id").OnDelete("SET NULL")
+			Column("dept_id", "INTEGER").References(qrb.N("departments"), "id").OnDelete().SetNull()
 
 		testhelper.AssertSQLWriterEquals(t,
 			`CREATE TABLE users (
@@ -175,7 +214,7 @@ func TestCreateTable(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("orders")).
 			Column("user_id", "INTEGER").
 			ForeignKey("user_id").References(qrb.N("users"), "id").
-			OnDelete("CASCADE").OnUpdate("RESTRICT")
+			OnDelete().Cascade().OnUpdate().Restrict()
 
 		testhelper.AssertSQLWriterEquals(t,
 			`CREATE TABLE orders (user_id INTEGER, FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT)`,
@@ -291,7 +330,7 @@ func TestCreateTable(t *testing.T) {
 
 	t.Run("column after references chain continues correctly", func(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("orders")).
-			Column("user_id", "INTEGER").References(qrb.N("users"), "id").OnDelete("CASCADE").
+			Column("user_id", "INTEGER").References(qrb.N("users"), "id").OnDelete().Cascade().
 			Column("product_id", "INTEGER")
 
 		testhelper.AssertSQLWriterEquals(t,
@@ -316,7 +355,7 @@ func TestCreateTable(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("orders")).
 			Column("user_id", "INTEGER").
 			ForeignKey("user_id").References(qrb.N("users"), "id").
-			OnUpdate("CASCADE")
+			OnUpdate().Cascade()
 
 		testhelper.AssertSQLWriterEquals(t,
 			`CREATE TABLE orders (user_id INTEGER, FOREIGN KEY (user_id) REFERENCES users (id) ON UPDATE CASCADE)`,
@@ -330,8 +369,8 @@ func TestCreateTable(t *testing.T) {
 			Column("product_id", "INTEGER").NotNull().
 			Column("quantity", "INTEGER").Default(qrb.Int(1)).CreateTableBuilder.
 			PrimaryKey("order_id", "product_id").
-			ForeignKey("order_id").References(qrb.N("orders"), "id").OnDelete("CASCADE").
-			ForeignKey("product_id").References(qrb.N("products"), "id").OnDelete("RESTRICT").
+			ForeignKey("order_id").References(qrb.N("orders"), "id").OnDelete().Cascade().
+			ForeignKey("product_id").References(qrb.N("products"), "id").OnDelete().Restrict().
 			Check(qrb.N("quantity").Gt(qrb.Int(0)))
 
 		testhelper.AssertSQLWriterEquals(t,
@@ -384,6 +423,156 @@ func TestCreateTable(t *testing.T) {
 
 		testhelper.AssertSQLWriterEquals(t,
 			`CREATE TABLE IF NOT EXISTS target_schema.new_table (LIKE source_schema.original_table INCLUDING ALL)`,
+			nil, q,
+		)
+	})
+
+	t.Run("TEMPORARY", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("temp_data")).Temporary().
+			Column("id", "INTEGER")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TEMPORARY TABLE temp_data (id INTEGER)`,
+			nil, q,
+		)
+	})
+
+	t.Run("PARTITION BY RANGE", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("logs")).
+			Column("created_at", "TIMESTAMP").
+			Column("message", "TEXT").CreateTableBuilder.
+			PartitionByRange(qrb.N("created_at"))
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE logs (created_at TIMESTAMP, message TEXT) PARTITION BY RANGE (created_at)`,
+			nil, q,
+		)
+	})
+
+	t.Run("PARTITION BY LIST", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("region", "TEXT").
+			Column("amount", "NUMERIC").CreateTableBuilder.
+			PartitionByList(qrb.N("region"))
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (region TEXT, amount NUMERIC) PARTITION BY LIST (region)`,
+			nil, q,
+		)
+	})
+
+	t.Run("PARTITION BY HASH", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("events")).
+			Column("id", "INTEGER").CreateTableBuilder.
+			PartitionByHash(qrb.N("id"))
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE events (id INTEGER) PARTITION BY HASH (id)`,
+			nil, q,
+		)
+	})
+
+	t.Run("GENERATED ALWAYS AS IDENTITY", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("users")).
+			Column("id", "INTEGER").GeneratedAlwaysAsIdentity().
+			Column("name", "TEXT")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE users (id INTEGER GENERATED ALWAYS AS IDENTITY, name TEXT)`,
+			nil, q,
+		)
+	})
+
+	t.Run("GENERATED BY DEFAULT AS IDENTITY", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("users")).
+			Column("id", "INTEGER").GeneratedByDefaultAsIdentity()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE users (id INTEGER GENERATED BY DEFAULT AS IDENTITY)`,
+			nil, q,
+		)
+	})
+
+	t.Run("GENERATED ALWAYS AS expression STORED", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("people")).
+			Column("first_name", "TEXT").
+			Column("last_name", "TEXT").
+			Column("full_name", "TEXT").GeneratedAlwaysAs(qrb.N("first_name").Concat(qrb.String(" ")).Concat(qrb.N("last_name"))).Stored()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE people (first_name TEXT, last_name TEXT, full_name TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED)`,
+			nil, q,
+		)
+	})
+
+	t.Run("GENERATED ALWAYS AS expression VIRTUAL", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("products")).
+			Column("price", "NUMERIC").
+			Column("tax", "NUMERIC").
+			Column("total", "NUMERIC").GeneratedAlwaysAs(qrb.N("price").Op("+", qrb.N("tax"))).Virtual()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE products (price NUMERIC, tax NUMERIC, total NUMERIC GENERATED ALWAYS AS (price + tax) VIRTUAL)`,
+			nil, q,
+		)
+	})
+
+	t.Run("column REFERENCES DEFERRABLE INITIALLY DEFERRED", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("user_id", "INTEGER").References(qrb.N("users"), "id").
+			Deferrable().InitiallyDeferred()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (user_id INTEGER REFERENCES users (id) DEFERRABLE INITIALLY DEFERRED)`,
+			nil, q,
+		)
+	})
+
+	t.Run("table-level FOREIGN KEY DEFERRABLE INITIALLY DEFERRED", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("user_id", "INTEGER").
+			ForeignKey("user_id").References(qrb.N("users"), "id").
+			OnDelete().Cascade().
+			Deferrable().InitiallyDeferred()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (user_id INTEGER, FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED)`,
+			nil, q,
+		)
+	})
+
+	t.Run("table-level FOREIGN KEY NOT DEFERRABLE", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("user_id", "INTEGER").
+			ForeignKey("user_id").References(qrb.N("users"), "id").
+			NotDeferrable()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (user_id INTEGER, FOREIGN KEY (user_id) REFERENCES users (id) NOT DEFERRABLE)`,
+			nil, q,
+		)
+	})
+
+	t.Run("table-level FOREIGN KEY DEFERRABLE INITIALLY IMMEDIATE", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("orders")).
+			Column("user_id", "INTEGER").
+			ForeignKey("user_id").References(qrb.N("users"), "id").
+			Deferrable().InitiallyImmediate()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE orders (user_id INTEGER, FOREIGN KEY (user_id) REFERENCES users (id) DEFERRABLE)`,
+			nil, q,
+		)
+	})
+
+	t.Run("PARTITION BY RANGE with multiple columns", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("logs")).
+			Column("year", "INTEGER").
+			Column("month", "INTEGER").CreateTableBuilder.
+			PartitionByRange(qrb.N("year"), qrb.N("month"))
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE logs (year INTEGER, month INTEGER) PARTITION BY RANGE (year, month)`,
 			nil, q,
 		)
 	})
@@ -712,10 +901,20 @@ func TestAlterTable(t *testing.T) {
 
 	t.Run("ADD COLUMN with REFERENCES ON DELETE CASCADE", func(t *testing.T) {
 		q := ddl.AlterTable(qrb.N("orders")).
-			AddColumn("user_id", "INTEGER").References(qrb.N("users"), "id").OnDelete("CASCADE")
+			AddColumn("user_id", "INTEGER").References(qrb.N("users"), "id").OnDelete().Cascade()
 
 		testhelper.AssertSQLWriterEquals(t,
 			`ALTER TABLE orders ADD COLUMN user_id INTEGER REFERENCES users (id) ON DELETE CASCADE`,
+			nil, q,
+		)
+	})
+
+	t.Run("ADD COLUMN with REFERENCES ON UPDATE RESTRICT", func(t *testing.T) {
+		q := ddl.AlterTable(qrb.N("orders")).
+			AddColumn("user_id", "INTEGER").References(qrb.N("users"), "id").OnUpdate().Restrict()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`ALTER TABLE orders ADD COLUMN user_id INTEGER REFERENCES users (id) ON UPDATE RESTRICT`,
 			nil, q,
 		)
 	})
@@ -783,7 +982,7 @@ func TestAlterTable(t *testing.T) {
 	t.Run("ADD CONSTRAINT FOREIGN KEY with ON DELETE", func(t *testing.T) {
 		q := ddl.AlterTable(qrb.N("orders")).
 			AddConstraint("fk_user").ForeignKey("user_id").References(qrb.N("users"), "id").
-			OnDelete("CASCADE")
+			OnDelete().Cascade()
 
 		testhelper.AssertSQLWriterEquals(t,
 			`ALTER TABLE orders ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE`,
@@ -968,7 +1167,7 @@ func TestAlterTable(t *testing.T) {
 	t.Run("ADD CONSTRAINT FOREIGN KEY with ON DELETE and ON UPDATE", func(t *testing.T) {
 		q := ddl.AlterTable(qrb.N("orders")).
 			AddConstraint("fk_user").ForeignKey("user_id").References(qrb.N("users"), "id").
-			OnDelete("CASCADE").OnUpdate("SET NULL")
+			OnDelete().Cascade().OnUpdate().SetNull()
 
 		testhelper.AssertSQLWriterEquals(t,
 			`ALTER TABLE orders ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE SET NULL`,
@@ -986,12 +1185,14 @@ func TestCreateFunction(t *testing.T) {
 			Language("plpgsql").
 			Body("BEGIN\n    RETURN NEW;\nEND;")
 
-		sql, args, err := qrb.Build(q).ToSQL()
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		assert.Empty(t, args)
-		assert.Equal(t, "CREATE FUNCTION my_func() RETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n    RETURN NEW;\nEND;\n$$", sql)
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION my_func() RETURNS trigger LANGUAGE plpgsql AS $$
+				BEGIN
+				    RETURN NEW;
+				END;
+			$$`,
+			nil, q,
+		)
 	})
 
 	t.Run("OR REPLACE with schema-qualified name", func(t *testing.T) {
@@ -1001,12 +1202,17 @@ func TestCreateFunction(t *testing.T) {
 			Language("plpgsql").
 			Body("BEGIN\n    IF NEW.updated_at IS NOT DISTINCT FROM OLD.updated_at THEN\n        NEW.updated_at = NOW();\n    END IF;\n    RETURN NEW;\nEND;")
 
-		sql, args, err := qrb.Build(q).ToSQL()
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		assert.Empty(t, args)
-		assert.Equal(t, "CREATE OR REPLACE FUNCTION my_schema.trigger_set_timestamp() RETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n    IF NEW.updated_at IS NOT DISTINCT FROM OLD.updated_at THEN\n        NEW.updated_at = NOW();\n    END IF;\n    RETURN NEW;\nEND;\n$$", sql)
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE OR REPLACE FUNCTION my_schema.trigger_set_timestamp() RETURNS trigger LANGUAGE plpgsql AS $$
+				BEGIN
+				    IF NEW.updated_at IS NOT DISTINCT FROM OLD.updated_at THEN
+				        NEW.updated_at = NOW();
+				    END IF;
+				    RETURN NEW;
+				END;
+			$$`,
+			nil, q,
+		)
 	})
 
 	t.Run("custom dollar tag", func(t *testing.T) {
@@ -1016,11 +1222,168 @@ func TestCreateFunction(t *testing.T) {
 			Body("BEGIN\n    RETURN NEW;\nEND;").
 			DollarTag("fn")
 
-		sql, args, err := qrb.Build(q).ToSQL()
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		assert.Empty(t, args)
-		assert.Equal(t, "CREATE FUNCTION my_func() RETURNS trigger LANGUAGE plpgsql AS $fn$\nBEGIN\n    RETURN NEW;\nEND;\n$fn$", sql)
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION my_func() RETURNS trigger LANGUAGE plpgsql AS $fn$
+				BEGIN
+				    RETURN NEW;
+				END;
+			$fn$`,
+			nil, q,
+		)
+	})
+
+	t.Run("with parameters", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("add")).
+			Param("a", "integer").
+			Param("b", "integer").
+			Returns("integer").
+			Language("sql").
+			Body("SELECT a + b;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION add(a integer, b integer) RETURNS integer LANGUAGE sql AS $$
+				SELECT a + b;
+			$$`,
+			nil, q,
+		)
+	})
+
+	t.Run("with parameter default", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("greet")).
+			Param("name", "text").Default(qrb.String("world")).
+			Returns("text").
+			Language("sql").
+			Body("SELECT 'Hello, ' || name;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION greet(name text DEFAULT 'world') RETURNS text LANGUAGE sql AS $$
+				SELECT 'Hello, ' || name;
+			$$`,
+			nil, q,
+		)
+	})
+
+	t.Run("with OUT parameter", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("get_parts")).
+			Param("input", "text").
+			OutParam("first_part", "text").
+			OutParam("second_part", "text").
+			Language("plpgsql").
+			Body("BEGIN\n    first_part := 'a';\n    second_part := 'b';\nEND;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION get_parts(input text, OUT first_part text, OUT second_part text) LANGUAGE plpgsql AS $$
+				BEGIN
+				    first_part := 'a';
+				    second_part := 'b';
+				END;
+			$$`,
+			nil, q,
+		)
+	})
+
+	t.Run("RETURNS TABLE", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("get_users")).
+			ReturnsTable().Column("id", "integer").Column("name", "text").
+			Language("sql").
+			Body("SELECT id, name FROM users;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION get_users() RETURNS TABLE (id integer, name text) LANGUAGE sql AS $$
+				SELECT id, name FROM users;
+			$$`,
+			nil, q,
+		)
+	})
+
+	t.Run("IMMUTABLE", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("double")).
+			Param("x", "integer").
+			Returns("integer").
+			Language("sql").
+			Immutable().
+			Body("SELECT x * 2;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION double(x integer) RETURNS integer LANGUAGE sql IMMUTABLE AS $$
+				SELECT x * 2;
+			$$`,
+			nil, q,
+		)
+	})
+
+	t.Run("STABLE STRICT SECURITY DEFINER PARALLEL SAFE", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("lookup")).
+			Param("key", "text").
+			Returns("text").
+			Language("sql").
+			Stable().
+			Strict().
+			SecurityDefiner().
+			ParallelSafe().
+			Body("SELECT value FROM config WHERE k = key;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION lookup(key text) RETURNS text LANGUAGE sql STABLE STRICT SECURITY DEFINER PARALLEL SAFE AS $$
+				SELECT value FROM config WHERE k = key;
+			$$`,
+			nil, q,
+		)
+	})
+
+	t.Run("VOLATILE CALLED ON NULL INPUT SECURITY INVOKER PARALLEL UNSAFE", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("do_something")).
+			Returns("void").
+			Language("plpgsql").
+			Volatile().
+			CalledOnNullInput().
+			SecurityInvoker().
+			ParallelUnsafe().
+			Body("BEGIN\nEND;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION do_something() RETURNS void LANGUAGE plpgsql VOLATILE CALLED ON NULL INPUT SECURITY INVOKER PARALLEL UNSAFE AS $$
+				BEGIN
+				END;
+			$$`,
+			nil, q,
+		)
+	})
+
+	t.Run("RETURNS NULL ON NULL INPUT PARALLEL RESTRICTED", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("safe_div")).
+			Param("a", "numeric").
+			Param("b", "numeric").
+			Returns("numeric").
+			Language("sql").
+			Immutable().
+			ReturnsNullOnNullInput().
+			ParallelRestricted().
+			Body("SELECT a / b;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION safe_div(a numeric, b numeric) RETURNS numeric LANGUAGE sql IMMUTABLE RETURNS NULL ON NULL INPUT PARALLEL RESTRICTED AS $$
+				SELECT a / b;
+			$$`,
+			nil, q,
+		)
+	})
+
+	t.Run("IN and INOUT and VARIADIC params", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("example")).
+			InParam("a", "integer").
+			InOutParam("b", "integer").
+			VariadicParam("rest", "integer[]").
+			Returns("integer").
+			Language("plpgsql").
+			Body("BEGIN\nEND;")
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE FUNCTION example(IN a integer, INOUT b integer, VARIADIC rest integer[]) RETURNS integer LANGUAGE plpgsql AS $$
+				BEGIN
+				END;
+			$$`,
+			nil, q,
+		)
 	})
 }

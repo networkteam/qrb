@@ -32,13 +32,19 @@ func AssertSQLEquals(t *testing.T, expected string, actual string) {
 	// Compare actual and expected and ignore whitespace differences (e.g. a space could also be multiple spaces / tab or newlines).
 	// But make sure minimal whitespace is preserved (e.g. a space between two words should not be removed).
 	// This is to make the tests more readable.
+	expected = normalizeSQL(expected)
+	actual = normalizeSQL(actual)
+
+	assert.Equal(t, expected, actual)
+}
+
+func normalizeSQL(s string) string {
 	// Replace all newlines with spaces to make the replacement regexp easier.
-	expected = strings.ReplaceAll(expected, "\n", " ")
+	s = strings.ReplaceAll(s, "\n", " ")
 	// Normalize whitespace (remove multiple spaces, remove space after opening brackets or comma)
 	pattern := regexp.MustCompile(`(\s|\(|,)\s+`)
-	expected = pattern.ReplaceAllString(expected, "$1")
+	s = pattern.ReplaceAllString(s, "$1")
 	// Remove space before closing brackets, ideally this would be handled by the pattern above
-	expected = strings.ReplaceAll(expected, " )", ")")
-
-	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(actual))
+	s = strings.ReplaceAll(s, " )", ")")
+	return strings.TrimSpace(s)
 }

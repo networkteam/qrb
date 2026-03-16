@@ -2,21 +2,26 @@ package builder
 
 // columnDef represents a column definition in a CREATE TABLE or ALTER TABLE ADD COLUMN statement.
 type columnDef struct {
-	name       string
-	typeName   string // raw SQL type string
-	notNull    bool
-	defaultExp Exp
-	primaryKey bool
-	unique     bool
-	check      Exp
-	references *columnReference
+	name              string
+	typeName          string // raw SQL type string
+	notNull           bool
+	defaultExp        Exp
+	primaryKey        bool
+	unique            bool
+	check             Exp
+	references        *columnReference
+	generatedIdentity string // "ALWAYS" or "BY DEFAULT" for GENERATED ... AS IDENTITY
+	generatedAs       Exp    // expression for GENERATED ALWAYS AS (expr) STORED
+	generatedStored   bool   // true = STORED, false = VIRTUAL
 }
 
 type columnReference struct {
-	table    Identer
-	columns  []string
-	onDelete string
-	onUpdate string
+	table             Identer
+	columns           []string
+	onDelete          string
+	onUpdate          string
+	deferrable        *bool
+	initiallyDeferred bool
 }
 
 func (c columnDef) writeSQL(sb *SQLBuilder) {
@@ -35,6 +40,21 @@ func (c columnDef) writeSQL(sb *SQLBuilder) {
 	}
 	if c.unique {
 		sb.WriteString(" UNIQUE")
+	}
+	if c.generatedIdentity != "" {
+		sb.WriteString(" GENERATED ")
+		sb.WriteString(c.generatedIdentity)
+		sb.WriteString(" AS IDENTITY")
+	}
+	if c.generatedAs != nil {
+		sb.WriteString(" GENERATED ALWAYS AS (")
+		c.generatedAs.WriteSQL(sb)
+		sb.WriteRune(')')
+		if c.generatedStored {
+			sb.WriteString(" STORED")
+		} else {
+			sb.WriteString(" VIRTUAL")
+		}
 	}
 	if c.check != nil {
 		sb.WriteString(" CHECK (")
@@ -62,6 +82,20 @@ func (r columnReference) writeSQL(sb *SQLBuilder) {
 		sb.WriteString(" ON UPDATE ")
 		sb.WriteString(r.onUpdate)
 	}
+	writeDeferrable(sb, r.deferrable, r.initiallyDeferred)
+}
+
+func writeDeferrable(sb *SQLBuilder, deferrable *bool, initiallyDeferred bool) {
+	if deferrable != nil {
+		if *deferrable {
+			sb.WriteString(" DEFERRABLE")
+		} else {
+			sb.WriteString(" NOT DEFERRABLE")
+		}
+		if initiallyDeferred {
+			sb.WriteString(" INITIALLY DEFERRED")
+		}
+	}
 }
 
 type tableConstraintKind int
@@ -74,14 +108,16 @@ const (
 )
 
 type tableConstraint struct {
-	constraintName string
-	kind           tableConstraintKind
-	columns        []string
-	refTable       Identer
-	refColumns     []string
-	onDelete       string
-	onUpdate       string
-	checkExp       Exp
+	constraintName    string
+	kind              tableConstraintKind
+	columns           []string
+	refTable          Identer
+	refColumns        []string
+	onDelete          string
+	onUpdate          string
+	checkExp          Exp
+	deferrable        *bool
+	initiallyDeferred bool
 }
 
 func (c tableConstraint) writeSQL(sb *SQLBuilder) {
@@ -122,6 +158,7 @@ func (c tableConstraint) writeSQL(sb *SQLBuilder) {
 		c.checkExp.WriteSQL(sb)
 		sb.WriteRune(')')
 	}
+	writeDeferrable(sb, c.deferrable, c.initiallyDeferred)
 }
 
 func writeColumnList(sb *SQLBuilder, columns []string) {

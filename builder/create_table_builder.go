@@ -9,13 +9,16 @@ func CreateTable(tableName Identer) CreateTableBuilder {
 
 // CreateTableBuilder builds a CREATE TABLE statement.
 type CreateTableBuilder struct {
-	tableName   Identer
-	ifNotExists bool
-	unlogged    bool
-	columns     []columnDef
-	constraints []tableConstraint
-	likeSource  Identer
-	likeOptions []string
+	tableName      Identer
+	ifNotExists    bool
+	unlogged       bool
+	temporary      bool
+	columns        []columnDef
+	constraints    []tableConstraint
+	likeSource     Identer
+	likeOptions    []string
+	partitionBy    string // "RANGE", "LIST", "HASH"
+	partitionExprs []Exp
 }
 
 // IfNotExists adds IF NOT EXISTS to the CREATE TABLE statement.
@@ -29,6 +32,37 @@ func (b CreateTableBuilder) IfNotExists() CreateTableBuilder {
 func (b CreateTableBuilder) Unlogged() CreateTableBuilder {
 	newBuilder := b
 	newBuilder.unlogged = true
+	return newBuilder
+}
+
+// Temporary adds TEMPORARY to the CREATE TABLE statement.
+func (b CreateTableBuilder) Temporary() CreateTableBuilder {
+	newBuilder := b
+	newBuilder.temporary = true
+	return newBuilder
+}
+
+// PartitionByRange adds PARTITION BY RANGE to the CREATE TABLE statement.
+func (b CreateTableBuilder) PartitionByRange(exprs ...Exp) CreateTableBuilder {
+	newBuilder := b
+	newBuilder.partitionBy = "RANGE"
+	newBuilder.partitionExprs = exprs
+	return newBuilder
+}
+
+// PartitionByList adds PARTITION BY LIST to the CREATE TABLE statement.
+func (b CreateTableBuilder) PartitionByList(exprs ...Exp) CreateTableBuilder {
+	newBuilder := b
+	newBuilder.partitionBy = "LIST"
+	newBuilder.partitionExprs = exprs
+	return newBuilder
+}
+
+// PartitionByHash adds PARTITION BY HASH to the CREATE TABLE statement.
+func (b CreateTableBuilder) PartitionByHash(exprs ...Exp) CreateTableBuilder {
+	newBuilder := b
+	newBuilder.partitionBy = "HASH"
+	newBuilder.partitionExprs = exprs
 	return newBuilder
 }
 
@@ -102,6 +136,9 @@ func (b CreateTableBuilder) Check(exp Exp) CreateTableBuilder {
 // WriteSQL writes the CREATE TABLE statement.
 func (b CreateTableBuilder) WriteSQL(sb *SQLBuilder) {
 	sb.WriteString("CREATE ")
+	if b.temporary {
+		sb.WriteString("TEMPORARY ")
+	}
 	if b.unlogged {
 		sb.WriteString("UNLOGGED ")
 	}
@@ -136,6 +173,18 @@ func (b CreateTableBuilder) WriteSQL(sb *SQLBuilder) {
 		idx++
 	}
 	sb.WriteRune(')')
+	if b.partitionBy != "" {
+		sb.WriteString(" PARTITION BY ")
+		sb.WriteString(b.partitionBy)
+		sb.WriteString(" (")
+		for i, expr := range b.partitionExprs {
+			if i > 0 {
+				sb.WriteString(",")
+			}
+			expr.WriteSQL(sb)
+		}
+		sb.WriteRune(')')
+	}
 }
 
 // --- LikeCreateTableBuilder ---
@@ -254,61 +303,97 @@ type ColumnCreateTableBuilder struct {
 	CreateTableBuilder
 }
 
-// NotNull adds a NOT NULL constraint to the last column.
-func (b ColumnCreateTableBuilder) NotNull() ColumnCreateTableBuilder {
+func (b ColumnCreateTableBuilder) cloneLastColumn() (ColumnCreateTableBuilder, *columnDef) {
 	newBuilder := b
 	cloneSlice(&newBuilder.columns, b.columns, 0)
-	lastIdx := len(newBuilder.columns) - 1
-	newBuilder.columns[lastIdx].notNull = true
+	return newBuilder, &newBuilder.columns[len(newBuilder.columns)-1]
+}
+
+// NotNull adds a NOT NULL constraint to the last column.
+func (b ColumnCreateTableBuilder) NotNull() ColumnCreateTableBuilder {
+	newBuilder, col := b.cloneLastColumn()
+	col.notNull = true
 	return newBuilder
 }
 
 // Default adds a DEFAULT expression to the last column.
 func (b ColumnCreateTableBuilder) Default(exp Exp) ColumnCreateTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.columns, b.columns, 0)
-	lastIdx := len(newBuilder.columns) - 1
-	newBuilder.columns[lastIdx].defaultExp = exp
+	newBuilder, col := b.cloneLastColumn()
+	col.defaultExp = exp
 	return newBuilder
 }
 
 // PrimaryKey adds a PRIMARY KEY constraint to the last column.
 func (b ColumnCreateTableBuilder) PrimaryKey() ColumnCreateTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.columns, b.columns, 0)
-	lastIdx := len(newBuilder.columns) - 1
-	newBuilder.columns[lastIdx].primaryKey = true
+	newBuilder, col := b.cloneLastColumn()
+	col.primaryKey = true
 	return newBuilder
 }
 
 // Unique adds a UNIQUE constraint to the last column.
 func (b ColumnCreateTableBuilder) Unique() ColumnCreateTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.columns, b.columns, 0)
-	lastIdx := len(newBuilder.columns) - 1
-	newBuilder.columns[lastIdx].unique = true
+	newBuilder, col := b.cloneLastColumn()
+	col.unique = true
 	return newBuilder
 }
 
 // Check adds a CHECK constraint to the last column.
 func (b ColumnCreateTableBuilder) Check(exp Exp) ColumnCreateTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.columns, b.columns, 0)
-	lastIdx := len(newBuilder.columns) - 1
-	newBuilder.columns[lastIdx].check = exp
+	newBuilder, col := b.cloneLastColumn()
+	col.check = exp
 	return newBuilder
+}
+
+// GeneratedAlwaysAsIdentity adds GENERATED ALWAYS AS IDENTITY to the last column.
+func (b ColumnCreateTableBuilder) GeneratedAlwaysAsIdentity() ColumnCreateTableBuilder {
+	newBuilder, col := b.cloneLastColumn()
+	col.generatedIdentity = "ALWAYS"
+	return newBuilder
+}
+
+// GeneratedByDefaultAsIdentity adds GENERATED BY DEFAULT AS IDENTITY to the last column.
+func (b ColumnCreateTableBuilder) GeneratedByDefaultAsIdentity() ColumnCreateTableBuilder {
+	newBuilder, col := b.cloneLastColumn()
+	col.generatedIdentity = "BY DEFAULT"
+	return newBuilder
+}
+
+// GeneratedAlwaysAs adds GENERATED ALWAYS AS (expression) to the last column.
+// Call Stored() or Virtual() on the returned builder to specify the storage type.
+func (b ColumnCreateTableBuilder) GeneratedAlwaysAs(exp Exp) GeneratedColumnCreateTableBuilder {
+	newBuilder, col := b.cloneLastColumn()
+	col.generatedAs = exp
+	return GeneratedColumnCreateTableBuilder{CreateTableBuilder: newBuilder.CreateTableBuilder}
 }
 
 // References adds a REFERENCES constraint to the last column.
 func (b ColumnCreateTableBuilder) References(table Identer, columns ...string) ReferencesCreateTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.columns, b.columns, 0)
-	lastIdx := len(newBuilder.columns) - 1
-	newBuilder.columns[lastIdx].references = &columnReference{
+	newBuilder, col := b.cloneLastColumn()
+	col.references = &columnReference{
 		table:   table,
 		columns: columns,
 	}
 	return ReferencesCreateTableBuilder(newBuilder)
+}
+
+// --- GeneratedColumnCreateTableBuilder ---
+
+// GeneratedColumnCreateTableBuilder is returned after GeneratedAlwaysAs, providing Stored/Virtual methods.
+type GeneratedColumnCreateTableBuilder struct {
+	CreateTableBuilder
+}
+
+// Stored sets the generated column to STORED.
+func (b GeneratedColumnCreateTableBuilder) Stored() ColumnCreateTableBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.columns, b.columns, 0)
+	newBuilder.columns[len(newBuilder.columns)-1].generatedStored = true
+	return ColumnCreateTableBuilder{CreateTableBuilder: newBuilder.CreateTableBuilder}
+}
+
+// Virtual sets the generated column to VIRTUAL.
+func (b GeneratedColumnCreateTableBuilder) Virtual() ColumnCreateTableBuilder {
+	return ColumnCreateTableBuilder{CreateTableBuilder: b.CreateTableBuilder}
 }
 
 // --- ReferencesCreateTableBuilder ---
@@ -318,25 +403,66 @@ type ReferencesCreateTableBuilder struct {
 	CreateTableBuilder
 }
 
-// OnDelete adds ON DELETE action to the last column's REFERENCES constraint.
-func (b ReferencesCreateTableBuilder) OnDelete(action string) ReferencesCreateTableBuilder {
+func (b ReferencesCreateTableBuilder) cloneLastRef() (ReferencesCreateTableBuilder, *columnReference) {
 	newBuilder := b
 	cloneSlice(&newBuilder.columns, b.columns, 0)
 	lastIdx := len(newBuilder.columns) - 1
 	ref := *newBuilder.columns[lastIdx].references
-	ref.onDelete = action
 	newBuilder.columns[lastIdx].references = &ref
+	return newBuilder, &ref
+}
+
+// OnDelete starts an ON DELETE referential action for the last column's REFERENCES constraint.
+func (b ReferencesCreateTableBuilder) OnDelete() ReferentialActionBuilder[ReferencesCreateTableBuilder] {
+	return ReferentialActionBuilder[ReferencesCreateTableBuilder]{
+		parent: b,
+		setter: func(b ReferencesCreateTableBuilder, action string) ReferencesCreateTableBuilder {
+			newBuilder, ref := b.cloneLastRef()
+			ref.onDelete = action
+			return newBuilder
+		},
+	}
+}
+
+// OnUpdate starts an ON UPDATE referential action for the last column's REFERENCES constraint.
+func (b ReferencesCreateTableBuilder) OnUpdate() ReferentialActionBuilder[ReferencesCreateTableBuilder] {
+	return ReferentialActionBuilder[ReferencesCreateTableBuilder]{
+		parent: b,
+		setter: func(b ReferencesCreateTableBuilder, action string) ReferencesCreateTableBuilder {
+			newBuilder, ref := b.cloneLastRef()
+			ref.onUpdate = action
+			return newBuilder
+		},
+	}
+}
+
+// Deferrable adds DEFERRABLE to the last column's REFERENCES constraint.
+func (b ReferencesCreateTableBuilder) Deferrable() ReferencesCreateTableBuilder {
+	newBuilder, ref := b.cloneLastRef()
+	v := true
+	ref.deferrable = &v
 	return newBuilder
 }
 
-// OnUpdate adds ON UPDATE action to the last column's REFERENCES constraint.
-func (b ReferencesCreateTableBuilder) OnUpdate(action string) ReferencesCreateTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.columns, b.columns, 0)
-	lastIdx := len(newBuilder.columns) - 1
-	ref := *newBuilder.columns[lastIdx].references
-	ref.onUpdate = action
-	newBuilder.columns[lastIdx].references = &ref
+// NotDeferrable adds NOT DEFERRABLE to the last column's REFERENCES constraint.
+func (b ReferencesCreateTableBuilder) NotDeferrable() ReferencesCreateTableBuilder {
+	newBuilder, ref := b.cloneLastRef()
+	v := false
+	ref.deferrable = &v
+	return newBuilder
+}
+
+// InitiallyDeferred adds INITIALLY DEFERRED to the last column's REFERENCES constraint.
+func (b ReferencesCreateTableBuilder) InitiallyDeferred() ReferencesCreateTableBuilder {
+	newBuilder, ref := b.cloneLastRef()
+	ref.initiallyDeferred = true
+	return newBuilder
+}
+
+// InitiallyImmediate adds INITIALLY IMMEDIATE to the last column's REFERENCES constraint.
+func (b ReferencesCreateTableBuilder) InitiallyImmediate() ReferencesCreateTableBuilder {
+	newBuilder, ref := b.cloneLastRef()
+	ref.initiallyDeferred = false
 	return newBuilder
 }
 
@@ -423,20 +549,62 @@ type ReferencesConstraintCreateTableBuilder struct {
 	CreateTableBuilder
 }
 
-// OnDelete adds ON DELETE action to the last table-level FOREIGN KEY constraint.
-func (b ReferencesConstraintCreateTableBuilder) OnDelete(action string) ReferencesConstraintCreateTableBuilder {
+func (b ReferencesConstraintCreateTableBuilder) cloneLastConstraint() (ReferencesConstraintCreateTableBuilder, *tableConstraint) {
 	newBuilder := b
 	cloneSlice(&newBuilder.constraints, b.constraints, 0)
-	lastIdx := len(newBuilder.constraints) - 1
-	newBuilder.constraints[lastIdx].onDelete = action
+	return newBuilder, &newBuilder.constraints[len(newBuilder.constraints)-1]
+}
+
+// OnDelete starts an ON DELETE referential action for the last table-level FOREIGN KEY constraint.
+func (b ReferencesConstraintCreateTableBuilder) OnDelete() ReferentialActionBuilder[ReferencesConstraintCreateTableBuilder] {
+	return ReferentialActionBuilder[ReferencesConstraintCreateTableBuilder]{
+		parent: b,
+		setter: func(b ReferencesConstraintCreateTableBuilder, action string) ReferencesConstraintCreateTableBuilder {
+			newBuilder, c := b.cloneLastConstraint()
+			c.onDelete = action
+			return newBuilder
+		},
+	}
+}
+
+// OnUpdate starts an ON UPDATE referential action for the last table-level FOREIGN KEY constraint.
+func (b ReferencesConstraintCreateTableBuilder) OnUpdate() ReferentialActionBuilder[ReferencesConstraintCreateTableBuilder] {
+	return ReferentialActionBuilder[ReferencesConstraintCreateTableBuilder]{
+		parent: b,
+		setter: func(b ReferencesConstraintCreateTableBuilder, action string) ReferencesConstraintCreateTableBuilder {
+			newBuilder, c := b.cloneLastConstraint()
+			c.onUpdate = action
+			return newBuilder
+		},
+	}
+}
+
+// Deferrable adds DEFERRABLE to the last table-level FOREIGN KEY constraint.
+func (b ReferencesConstraintCreateTableBuilder) Deferrable() ReferencesConstraintCreateTableBuilder {
+	newBuilder, c := b.cloneLastConstraint()
+	v := true
+	c.deferrable = &v
 	return newBuilder
 }
 
-// OnUpdate adds ON UPDATE action to the last table-level FOREIGN KEY constraint.
-func (b ReferencesConstraintCreateTableBuilder) OnUpdate(action string) ReferencesConstraintCreateTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.constraints, b.constraints, 0)
-	lastIdx := len(newBuilder.constraints) - 1
-	newBuilder.constraints[lastIdx].onUpdate = action
+// NotDeferrable adds NOT DEFERRABLE to the last table-level FOREIGN KEY constraint.
+func (b ReferencesConstraintCreateTableBuilder) NotDeferrable() ReferencesConstraintCreateTableBuilder {
+	newBuilder, c := b.cloneLastConstraint()
+	v := false
+	c.deferrable = &v
+	return newBuilder
+}
+
+// InitiallyDeferred adds INITIALLY DEFERRED to the last table-level FOREIGN KEY constraint.
+func (b ReferencesConstraintCreateTableBuilder) InitiallyDeferred() ReferencesConstraintCreateTableBuilder {
+	newBuilder, c := b.cloneLastConstraint()
+	c.initiallyDeferred = true
+	return newBuilder
+}
+
+// InitiallyImmediate adds INITIALLY IMMEDIATE to the last table-level FOREIGN KEY constraint.
+func (b ReferencesConstraintCreateTableBuilder) InitiallyImmediate() ReferencesConstraintCreateTableBuilder {
+	newBuilder, c := b.cloneLastConstraint()
+	c.initiallyDeferred = false
 	return newBuilder
 }

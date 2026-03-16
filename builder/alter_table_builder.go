@@ -242,57 +242,51 @@ type AddColumnAlterTableBuilder struct {
 	AlterTableBuilder
 }
 
-// NotNull adds NOT NULL to the last added column.
-func (b AddColumnAlterTableBuilder) NotNull() AddColumnAlterTableBuilder {
+func (b AddColumnAlterTableBuilder) cloneLastColumn() (AddColumnAlterTableBuilder, *columnDef) {
 	newBuilder := b
 	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	newBuilder.actions[lastIdx].column.notNull = true
+	return newBuilder, &newBuilder.actions[len(newBuilder.actions)-1].column
+}
+
+// NotNull adds NOT NULL to the last added column.
+func (b AddColumnAlterTableBuilder) NotNull() AddColumnAlterTableBuilder {
+	newBuilder, col := b.cloneLastColumn()
+	col.notNull = true
 	return newBuilder
 }
 
 // Default adds a DEFAULT expression to the last added column.
 func (b AddColumnAlterTableBuilder) Default(exp Exp) AddColumnAlterTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	newBuilder.actions[lastIdx].column.defaultExp = exp
+	newBuilder, col := b.cloneLastColumn()
+	col.defaultExp = exp
 	return newBuilder
 }
 
 // Unique adds a UNIQUE constraint to the last added column.
 func (b AddColumnAlterTableBuilder) Unique() AddColumnAlterTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	newBuilder.actions[lastIdx].column.unique = true
+	newBuilder, col := b.cloneLastColumn()
+	col.unique = true
 	return newBuilder
 }
 
 // PrimaryKey adds a PRIMARY KEY constraint to the last added column.
 func (b AddColumnAlterTableBuilder) PrimaryKey() AddColumnAlterTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	newBuilder.actions[lastIdx].column.primaryKey = true
+	newBuilder, col := b.cloneLastColumn()
+	col.primaryKey = true
 	return newBuilder
 }
 
 // Check adds a CHECK constraint to the last added column.
 func (b AddColumnAlterTableBuilder) Check(exp Exp) AddColumnAlterTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	newBuilder.actions[lastIdx].column.check = exp
+	newBuilder, col := b.cloneLastColumn()
+	col.check = exp
 	return newBuilder
 }
 
 // References adds a REFERENCES constraint to the last added column.
 func (b AddColumnAlterTableBuilder) References(table Identer, columns ...string) ReferencesAlterTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	newBuilder.actions[lastIdx].column.references = &columnReference{
+	newBuilder, col := b.cloneLastColumn()
+	col.references = &columnReference{
 		table:   table,
 		columns: columns,
 	}
@@ -306,26 +300,37 @@ type ReferencesAlterTableBuilder struct {
 	AlterTableBuilder
 }
 
-// OnDelete adds ON DELETE action.
-func (b ReferencesAlterTableBuilder) OnDelete(action string) ReferencesAlterTableBuilder {
+func (b ReferencesAlterTableBuilder) cloneLastRef() (ReferencesAlterTableBuilder, *columnReference) {
 	newBuilder := b
 	cloneSlice(&newBuilder.actions, b.actions, 0)
 	lastIdx := len(newBuilder.actions) - 1
 	ref := *newBuilder.actions[lastIdx].column.references
-	ref.onDelete = action
 	newBuilder.actions[lastIdx].column.references = &ref
-	return newBuilder
+	return newBuilder, &ref
 }
 
-// OnUpdate adds ON UPDATE action.
-func (b ReferencesAlterTableBuilder) OnUpdate(action string) ReferencesAlterTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	ref := *newBuilder.actions[lastIdx].column.references
-	ref.onUpdate = action
-	newBuilder.actions[lastIdx].column.references = &ref
-	return newBuilder
+// OnDelete starts an ON DELETE referential action.
+func (b ReferencesAlterTableBuilder) OnDelete() ReferentialActionBuilder[ReferencesAlterTableBuilder] {
+	return ReferentialActionBuilder[ReferencesAlterTableBuilder]{
+		parent: b,
+		setter: func(b ReferencesAlterTableBuilder, action string) ReferencesAlterTableBuilder {
+			newBuilder, ref := b.cloneLastRef()
+			ref.onDelete = action
+			return newBuilder
+		},
+	}
+}
+
+// OnUpdate starts an ON UPDATE referential action.
+func (b ReferencesAlterTableBuilder) OnUpdate() ReferentialActionBuilder[ReferencesAlterTableBuilder] {
+	return ReferentialActionBuilder[ReferencesAlterTableBuilder]{
+		parent: b,
+		setter: func(b ReferencesAlterTableBuilder, action string) ReferencesAlterTableBuilder {
+			newBuilder, ref := b.cloneLastRef()
+			ref.onUpdate = action
+			return newBuilder
+		},
+	}
 }
 
 // --- AddConstraintAlterTableBuilder ---
@@ -423,22 +428,34 @@ type ReferencesConstraintAlterTableBuilder struct {
 	AlterTableBuilder
 }
 
-// OnDelete adds ON DELETE action.
-func (b ReferencesConstraintAlterTableBuilder) OnDelete(action string) ReferencesConstraintAlterTableBuilder {
+func (b ReferencesConstraintAlterTableBuilder) cloneLastConstraint() (ReferencesConstraintAlterTableBuilder, *tableConstraint) {
 	newBuilder := b
 	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	newBuilder.actions[lastIdx].constraint.onDelete = action
-	return newBuilder
+	return newBuilder, &newBuilder.actions[len(newBuilder.actions)-1].constraint
 }
 
-// OnUpdate adds ON UPDATE action.
-func (b ReferencesConstraintAlterTableBuilder) OnUpdate(action string) ReferencesConstraintAlterTableBuilder {
-	newBuilder := b
-	cloneSlice(&newBuilder.actions, b.actions, 0)
-	lastIdx := len(newBuilder.actions) - 1
-	newBuilder.actions[lastIdx].constraint.onUpdate = action
-	return newBuilder
+// OnDelete starts an ON DELETE referential action.
+func (b ReferencesConstraintAlterTableBuilder) OnDelete() ReferentialActionBuilder[ReferencesConstraintAlterTableBuilder] {
+	return ReferentialActionBuilder[ReferencesConstraintAlterTableBuilder]{
+		parent: b,
+		setter: func(b ReferencesConstraintAlterTableBuilder, action string) ReferencesConstraintAlterTableBuilder {
+			newBuilder, c := b.cloneLastConstraint()
+			c.onDelete = action
+			return newBuilder
+		},
+	}
+}
+
+// OnUpdate starts an ON UPDATE referential action.
+func (b ReferencesConstraintAlterTableBuilder) OnUpdate() ReferentialActionBuilder[ReferencesConstraintAlterTableBuilder] {
+	return ReferentialActionBuilder[ReferencesConstraintAlterTableBuilder]{
+		parent: b,
+		setter: func(b ReferencesConstraintAlterTableBuilder, action string) ReferencesConstraintAlterTableBuilder {
+			newBuilder, c := b.cloneLastConstraint()
+			c.onUpdate = action
+			return newBuilder
+		},
+	}
 }
 
 // --- AlterColumnBuilder ---
