@@ -363,7 +363,7 @@ func (b ColumnCreateTableBuilder) GeneratedByDefaultAsIdentity() ColumnCreateTab
 func (b ColumnCreateTableBuilder) GeneratedAlwaysAs(exp Exp) GeneratedColumnCreateTableBuilder {
 	newBuilder, col := b.cloneLastColumn()
 	col.generatedAs = exp
-	return GeneratedColumnCreateTableBuilder{CreateTableBuilder: newBuilder.CreateTableBuilder}
+	return GeneratedColumnCreateTableBuilder(newBuilder)
 }
 
 // References adds a REFERENCES constraint to the last column.
@@ -388,12 +388,12 @@ func (b GeneratedColumnCreateTableBuilder) Stored() ColumnCreateTableBuilder {
 	newBuilder := b
 	cloneSlice(&newBuilder.columns, b.columns, 0)
 	newBuilder.columns[len(newBuilder.columns)-1].generatedStored = true
-	return ColumnCreateTableBuilder{CreateTableBuilder: newBuilder.CreateTableBuilder}
+	return ColumnCreateTableBuilder(newBuilder)
 }
 
 // Virtual sets the generated column to VIRTUAL.
 func (b GeneratedColumnCreateTableBuilder) Virtual() ColumnCreateTableBuilder {
-	return ColumnCreateTableBuilder{CreateTableBuilder: b.CreateTableBuilder}
+	return ColumnCreateTableBuilder(b)
 }
 
 // --- ReferencesCreateTableBuilder ---
