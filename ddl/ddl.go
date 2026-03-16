@@ -31,3 +31,8 @@ func DropSchema(schemaName builder.Identer, rest ...builder.Identer) builder.Dro
 func AlterTable(tableName builder.Identer) builder.AlterTableBuilder {
 	return builder.AlterTable(tableName)
 }
+
+// CreateFunction starts building a CREATE FUNCTION statement.
+func CreateFunction(functionName builder.Identer) builder.CreateFunctionBuilder {
+	return builder.CreateFunction(functionName)
+}

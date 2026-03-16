@@ -14,6 +14,8 @@ type CreateTableBuilder struct {
 	unlogged    bool
 	columns     []columnDef
 	constraints []tableConstraint
+	likeSource  Identer
+	likeOptions []string
 }
 
 // IfNotExists adds IF NOT EXISTS to the CREATE TABLE statement.
@@ -28,6 +30,13 @@ func (b CreateTableBuilder) Unlogged() CreateTableBuilder {
 	newBuilder := b
 	newBuilder.unlogged = true
 	return newBuilder
+}
+
+// Like adds a LIKE source_table clause to the CREATE TABLE statement.
+func (b CreateTableBuilder) Like(source Identer) LikeCreateTableBuilder {
+	newBuilder := b
+	newBuilder.likeSource = source
+	return LikeCreateTableBuilder{CreateTableBuilder: newBuilder}
 }
 
 // Column adds a column definition to the CREATE TABLE statement.
@@ -103,6 +112,15 @@ func (b CreateTableBuilder) WriteSQL(sb *SQLBuilder) {
 	b.tableName.WriteSQL(sb)
 	sb.WriteString(" (")
 	idx := 0
+	if b.likeSource != nil {
+		sb.WriteString("LIKE ")
+		b.likeSource.WriteSQL(sb)
+		for _, opt := range b.likeOptions {
+			sb.WriteString(" ")
+			sb.WriteString(opt)
+		}
+		idx++
+	}
 	for _, col := range b.columns {
 		if idx > 0 {
 			sb.WriteString(",")
@@ -118,6 +136,115 @@ func (b CreateTableBuilder) WriteSQL(sb *SQLBuilder) {
 		idx++
 	}
 	sb.WriteRune(')')
+}
+
+// --- LikeCreateTableBuilder ---
+
+// LikeCreateTableBuilder is returned after adding a LIKE clause, providing INCLUDING/EXCLUDING methods.
+type LikeCreateTableBuilder struct {
+	CreateTableBuilder
+}
+
+func (b LikeCreateTableBuilder) appendLikeOption(option string) LikeCreateTableBuilder {
+	newBuilder := b
+	cloneSlice(&newBuilder.likeOptions, b.likeOptions, 1)
+	newBuilder.likeOptions = append(newBuilder.likeOptions, option)
+	return newBuilder
+}
+
+// IncludingAll adds INCLUDING ALL to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingAll() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING ALL")
+}
+
+// IncludingComments adds INCLUDING COMMENTS to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingComments() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING COMMENTS")
+}
+
+// IncludingCompression adds INCLUDING COMPRESSION to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingCompression() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING COMPRESSION")
+}
+
+// IncludingConstraints adds INCLUDING CONSTRAINTS to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingConstraints() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING CONSTRAINTS")
+}
+
+// IncludingDefaults adds INCLUDING DEFAULTS to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingDefaults() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING DEFAULTS")
+}
+
+// IncludingGenerated adds INCLUDING GENERATED to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingGenerated() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING GENERATED")
+}
+
+// IncludingIdentity adds INCLUDING IDENTITY to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingIdentity() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING IDENTITY")
+}
+
+// IncludingIndexes adds INCLUDING INDEXES to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingIndexes() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING INDEXES")
+}
+
+// IncludingStatistics adds INCLUDING STATISTICS to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingStatistics() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING STATISTICS")
+}
+
+// IncludingStorage adds INCLUDING STORAGE to the LIKE clause.
+func (b LikeCreateTableBuilder) IncludingStorage() LikeCreateTableBuilder {
+	return b.appendLikeOption("INCLUDING STORAGE")
+}
+
+// ExcludingComments adds EXCLUDING COMMENTS to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingComments() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING COMMENTS")
+}
+
+// ExcludingCompression adds EXCLUDING COMPRESSION to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingCompression() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING COMPRESSION")
+}
+
+// ExcludingConstraints adds EXCLUDING CONSTRAINTS to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingConstraints() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING CONSTRAINTS")
+}
+
+// ExcludingDefaults adds EXCLUDING DEFAULTS to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingDefaults() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING DEFAULTS")
+}
+
+// ExcludingGenerated adds EXCLUDING GENERATED to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingGenerated() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING GENERATED")
+}
+
+// ExcludingIdentity adds EXCLUDING IDENTITY to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingIdentity() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING IDENTITY")
+}
+
+// ExcludingIndexes adds EXCLUDING INDEXES to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingIndexes() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING INDEXES")
+}
+
+// ExcludingStatistics adds EXCLUDING STATISTICS to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingStatistics() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING STATISTICS")
+}
+
+// ExcludingStorage adds EXCLUDING STORAGE to the LIKE clause.
+func (b LikeCreateTableBuilder) ExcludingStorage() LikeCreateTableBuilder {
+	return b.appendLikeOption("EXCLUDING STORAGE")
 }
 
 // --- ColumnCreateTableBuilder ---

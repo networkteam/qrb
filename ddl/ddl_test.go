@@ -3,6 +3,8 @@ package ddl_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/networkteam/qrb"
 	"github.com/networkteam/qrb/ddl"
 	"github.com/networkteam/qrb/internal/testhelper"
@@ -342,6 +344,46 @@ func TestCreateTable(t *testing.T) {
 				FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT,
 				CHECK (quantity > 0)
 			)`,
+			nil, q,
+		)
+	})
+
+	t.Run("LIKE", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("new_table")).
+			Like(qrb.N("original_table"))
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE new_table (LIKE original_table)`,
+			nil, q,
+		)
+	})
+
+	t.Run("LIKE INCLUDING ALL", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("target_schema.new_table")).
+			Like(qrb.N("source_schema.original_table")).IncludingAll()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE target_schema.new_table (LIKE source_schema.original_table INCLUDING ALL)`,
+			nil, q,
+		)
+	})
+
+	t.Run("LIKE INCLUDING ALL EXCLUDING INDEXES", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("new_table")).
+			Like(qrb.N("original_table")).IncludingAll().ExcludingIndexes()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE new_table (LIKE original_table INCLUDING ALL EXCLUDING INDEXES)`,
+			nil, q,
+		)
+	})
+
+	t.Run("LIKE INCLUDING ALL with IF NOT EXISTS", func(t *testing.T) {
+		q := ddl.CreateTable(qrb.N("target_schema.new_table")).IfNotExists().
+			Like(qrb.N("source_schema.original_table")).IncludingAll()
+
+		testhelper.AssertSQLWriterEquals(t,
+			`CREATE TABLE IF NOT EXISTS target_schema.new_table (LIKE source_schema.original_table INCLUDING ALL)`,
 			nil, q,
 		)
 	})
@@ -932,5 +974,53 @@ func TestAlterTable(t *testing.T) {
 			`ALTER TABLE orders ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ON UPDATE SET NULL`,
 			nil, q,
 		)
+	})
+}
+
+// --- CREATE FUNCTION ---
+
+func TestCreateFunction(t *testing.T) {
+	t.Run("basic", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("my_func")).
+			Returns("trigger").
+			Language("plpgsql").
+			Body("BEGIN\n    RETURN NEW;\nEND;")
+
+		sql, args, err := qrb.Build(q).ToSQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		assert.Empty(t, args)
+		assert.Equal(t, "CREATE FUNCTION my_func() RETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n    RETURN NEW;\nEND;\n$$", sql)
+	})
+
+	t.Run("OR REPLACE with schema-qualified name", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("my_schema.trigger_set_timestamp")).
+			OrReplace().
+			Returns("trigger").
+			Language("plpgsql").
+			Body("BEGIN\n    IF NEW.updated_at IS NOT DISTINCT FROM OLD.updated_at THEN\n        NEW.updated_at = NOW();\n    END IF;\n    RETURN NEW;\nEND;")
+
+		sql, args, err := qrb.Build(q).ToSQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		assert.Empty(t, args)
+		assert.Equal(t, "CREATE OR REPLACE FUNCTION my_schema.trigger_set_timestamp() RETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n    IF NEW.updated_at IS NOT DISTINCT FROM OLD.updated_at THEN\n        NEW.updated_at = NOW();\n    END IF;\n    RETURN NEW;\nEND;\n$$", sql)
+	})
+
+	t.Run("custom dollar tag", func(t *testing.T) {
+		q := ddl.CreateFunction(qrb.N("my_func")).
+			Returns("trigger").
+			Language("plpgsql").
+			Body("BEGIN\n    RETURN NEW;\nEND;").
+			DollarTag("fn")
+
+		sql, args, err := qrb.Build(q).ToSQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		assert.Empty(t, args)
+		assert.Equal(t, "CREATE FUNCTION my_func() RETURNS trigger LANGUAGE plpgsql AS $fn$\nBEGIN\n    RETURN NEW;\nEND;\n$fn$", sql)
 	})
 }
