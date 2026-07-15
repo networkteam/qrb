@@ -1,0 +1,10 @@
+version: "2"
+
+linters:
+  exclusions:
+    rules:
+      # Dot imports make the query-builder DSL readable in this example.
+      - path: '(^|/)examples/libpq/repository\.go$|^repository\.go$'
+        text: 'ST1001:'
+        linters:
+          - staticcheck

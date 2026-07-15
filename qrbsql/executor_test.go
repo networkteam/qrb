@@ -15,7 +15,9 @@ import (
 func TestExecutiveQueryBuilder(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	require.NoError(t, err)
-	defer db.Close()
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
 
 	selectQuery := qrb.Select(qrb.N("id"), qrb.N("name")).
 		From(qrb.N("users")).

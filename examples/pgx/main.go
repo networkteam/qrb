@@ -46,6 +46,9 @@ func main() {
 			Build(q).
 			WithExecutor(conn).
 			QueryRow(ctx)
+		if err != nil {
+			log.Fatalf("Error building query: %v", err)
+		}
 
 		var (
 			albumTitle string
@@ -65,6 +68,9 @@ func main() {
 			Build(q).
 			WithExecutor(pool).
 			QueryRow(ctx)
+		if err != nil {
+			log.Fatalf("Error building query: %v", err)
+		}
 
 		var (
 			albumTitle string
@@ -97,6 +103,9 @@ func main() {
 			Build(q).
 			WithExecutor(tx).
 			QueryRow(ctx)
+		if err != nil {
+			log.Fatalf("Error building query: %v", err)
+		}
 
 		var (
 			albumTitle string

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 
 	. "github.com/networkteam/qrb"
 	"github.com/networkteam/qrb/builder"
@@ -66,14 +67,15 @@ func selectBookGenresArray() builder.Exp {
 		Where(N("book_genre.book_id").Eq(N("books.book_id")))
 }
 
-func queryAndScanBooks(ctx context.Context, executor qrbsql.Executor, query builder.SelectBuilder) ([]Book, error) {
+func queryAndScanBooks(ctx context.Context, executor qrbsql.Executor, query builder.SelectBuilder) (books []Book, err error) {
 	rows, err := qrbsql.Build(query).WithExecutor(executor).Query(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err = errors.Join(err, rows.Close())
+	}()
 
-	var books []Book
 	for rows.Next() {
 		var book Book
 		err = rows.Scan(

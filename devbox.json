@@ -1,16 +1,20 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.0/.schema/devbox.schema.json",
   "packages": [
-    "go@1.24.11",
-    "golangci-lint@1.64.8"
+    "go@1.25.11",
+    "golangci-lint@2.12.2"
   ],
   "shell": {
     "scripts": {
       "test": [
-        "go test ./..."
+        "go test ./...",
+        "(cd examples/libpq && go test ./...)",
+        "(cd examples/pgx && go test ./...)"
       ],
       "lint": [
-        "golangci-lint run ."
+        "golangci-lint run ./...",
+        "(cd examples/libpq && golangci-lint run ./...)",
+        "(cd examples/pgx && golangci-lint run ./...)"
       ]
     }
   }

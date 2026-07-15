@@ -10,47 +10,50 @@ on:
 name: run tests
 jobs:
   golangci:
-    name: lint
+    strategy:
+      matrix:
+        module: [ '.', 'examples/libpq', 'examples/pgx' ]
+    name: lint (${{ matrix.module }})
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Install Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: '1.25.x'
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.64.8
+          version: v2.12.2
+          working-directory: ${{ matrix.module }}
 
   test:
     strategy:
       matrix:
-        go-version: [ '1.24', '1.25' ]
-        platform: [ 'ubuntu-latest' ]
-    runs-on: ${{ matrix.platform }}
+        module: [ '.', 'examples/libpq', 'examples/pgx' ]
+    name: test (${{ matrix.module }})
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Install Go
-        if: success()
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: '1.25.x'
       - name: Run tests
         run: go test -v ./...
+        working-directory: ${{ matrix.module }}
 
   coverage:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Install Go
-        if: success()
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: '1.25.x'
       - name: Calc coverage
         run: |
           go test -cover ./... -coverpkg=github.com/networkteam/qrb/... -coverprofile=coverage.txt
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7

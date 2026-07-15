@@ -440,7 +440,7 @@ func TestCreateTable(t *testing.T) {
 	t.Run("PARTITION BY RANGE", func(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("logs")).
 			Column("created_at", "TIMESTAMP").
-			Column("message", "TEXT").CreateTableBuilder.
+			Column("message", "TEXT").
 			PartitionByRange(qrb.N("created_at"))
 
 		testhelper.AssertSQLWriterEquals(t,
@@ -452,7 +452,7 @@ func TestCreateTable(t *testing.T) {
 	t.Run("PARTITION BY LIST", func(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("orders")).
 			Column("region", "TEXT").
-			Column("amount", "NUMERIC").CreateTableBuilder.
+			Column("amount", "NUMERIC").
 			PartitionByList(qrb.N("region"))
 
 		testhelper.AssertSQLWriterEquals(t,
@@ -463,7 +463,7 @@ func TestCreateTable(t *testing.T) {
 
 	t.Run("PARTITION BY HASH", func(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("events")).
-			Column("id", "INTEGER").CreateTableBuilder.
+			Column("id", "INTEGER").
 			PartitionByHash(qrb.N("id"))
 
 		testhelper.AssertSQLWriterEquals(t,
@@ -568,7 +568,7 @@ func TestCreateTable(t *testing.T) {
 	t.Run("PARTITION BY RANGE with multiple columns", func(t *testing.T) {
 		q := ddl.CreateTable(qrb.N("logs")).
 			Column("year", "INTEGER").
-			Column("month", "INTEGER").CreateTableBuilder.
+			Column("month", "INTEGER").
 			PartitionByRange(qrb.N("year"), qrb.N("month"))
 
 		testhelper.AssertSQLWriterEquals(t,
